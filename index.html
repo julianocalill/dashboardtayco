@@ -122,8 +122,7 @@
 
             <div id="view-commercial" class="hidden space-y-6">
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" id="commercial-kpis">
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" id="commercial-kpis"></div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
@@ -131,7 +130,9 @@
                         <div class="h-64 chart-container"><canvas id="chart-mix-brands-com"></canvas></div>
                     </div>
                     <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
-                        <h3 class="text-gray-300 font-semibold mb-6 text-sm">Faixa de Preço</h3>
+                        <h3 class="text-gray-300 font-semibold mb-6 text-sm flex justify-between items-center">
+                            Faixa de Preço <span class="text-[10px] text-primary font-normal bg-primary/10 px-2 py-0.5 rounded">Clique na barra para ver</span>
+                        </h3>
                         <div class="h-64 chart-container"><canvas id="chart-price-range"></canvas></div>
                     </div>
                     <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
@@ -229,6 +230,17 @@
         </div>
     </div>
 
+    <div id="list-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[70] backdrop-blur-md" onclick="ui.closeList(event)">
+        <div class="bg-card border border-border p-6 rounded-xl w-96 max-h-[80vh] flex flex-col shadow-2xl animate-fade-in-up" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-border pb-2">
+                <h3 id="list-modal-title" class="text-white font-bold text-lg">Veículos</h3>
+                <button onclick="ui.closeList(null, true)" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="list-modal-content" class="overflow-y-auto custom-scrollbar space-y-2 pr-2">
+                </div>
+        </div>
+    </div>
+
     <script>
         const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
         
@@ -276,6 +288,33 @@
                     document.getElementById('modal-img-src').src = '';
                 }
             },
+            
+            // Lógica do Modal de Lista
+            openList: (title, vehicles) => {
+                document.getElementById('list-modal-title').innerText = title;
+                const content = document.getElementById('list-modal-content');
+                
+                if (vehicles.length === 0) {
+                    content.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum veículo nesta faixa.</p>';
+                } else {
+                    content.innerHTML = vehicles.map(v => `
+                        <div class="flex justify-between items-center bg-bg/50 p-3 rounded hover:bg-white/5 transition border border-transparent hover:border-primary/20">
+                            <span class="text-gray-300 font-medium text-xs truncate max-w-[60%]">${v.vehicle_name}</span>
+                            <span class="text-primary font-mono text-xs font-bold">${formatBRL(v.price)}</span>
+                        </div>
+                    `).join('');
+                }
+                
+                document.getElementById('list-modal').classList.remove('hidden');
+                document.getElementById('list-modal').classList.add('flex');
+            },
+            closeList: (e, force) => {
+                 if (force || e.target.id === 'list-modal') {
+                    document.getElementById('list-modal').classList.add('hidden');
+                    document.getElementById('list-modal').classList.remove('flex');
+                }
+            },
+
             updateSortIcons: (activeCol, order) => {
                 ['price', 'days_in_stock'].forEach(col => {
                     const icon = document.getElementById(`icon-${col}`);
@@ -379,19 +418,14 @@
                 container.innerHTML = '';
                 
                 const stats = app.stats || { stock_value: 0, stock_count: 0, avg_ticket: 0, avg_days: 0 };
-                
-                // Calcular vendas para o período selecionado
                 const days = parseInt(document.getElementById('date-range').value);
                 const startDate = new Date(); startDate.setDate(startDate.getDate() - days);
                 const salesCount = app.data.sales.filter(s => s.closing_date >= startDate.toISOString()).length;
 
-                // Renderizando os 5 Cards em ordem
                 ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Investido', 'fa-solid fa-dollar-sign', 'blue', 'commercial-kpis');
                 ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray', 'commercial-kpis');
                 ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'Estoque', 'fa-solid fa-bullseye', 'green', 'commercial-kpis');
                 ui.renderKpi('Média Dias Estoque', `${Math.round(stats.avg_days)} dias`, 'Giro', 'fa-regular fa-clock', 'green', 'commercial-kpis');
-                
-                // Card de Vendas (NOVO) - Ultima posição
                 ui.renderKpi('Vendas', salesCount, 'Realizadas', 'fa-solid fa-hand-holding-dollar', 'green', 'commercial-kpis');
             },
 
@@ -436,6 +470,24 @@
                     </tr>`).join('');
             },
 
+            // Helper para filtrar os carros para o popup
+            showVehiclesByPrice: (rangeLabel) => {
+                const vehicles = app.data.stock.filter(c => {
+                    const p = parseFloat(c.price) || 0;
+                    if (rangeLabel === 'Até R$ 50k') return p < 50000;
+                    if (rangeLabel === 'R$ 50k - 80k') return p >= 50000 && p < 80000;
+                    if (rangeLabel === 'R$ 80k - 120k') return p >= 80000 && p < 120000;
+                    if (rangeLabel === 'R$ 120k - 180k') return p >= 120000 && p < 180000;
+                    if (rangeLabel === 'Acima de R$ 180k') return p >= 180000;
+                    return false;
+                });
+                
+                // Ordena do mais caro pro mais barato por padrão
+                vehicles.sort((a,b) => (parseFloat(b.price)||0) - (parseFloat(a.price)||0));
+                
+                ui.openList(rangeLabel, vehicles);
+            },
+
             initCharts: () => {
                 Chart.defaults.color = '#6B7280';
                 Chart.defaults.borderColor = '#2A303C';
@@ -450,6 +502,7 @@
                 app.charts.mixBrandsCom = new Chart(document.getElementById('chart-mix-brands-com'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
                 app.charts.topBrandsCom = new Chart(document.getElementById('chart-top-brands-com'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
                 
+                // CHART FAIXA DE PREÇO COM CLICK
                 app.charts.priceRange = new Chart(document.getElementById('chart-price-range'), {
                     type: 'bar',
                     data: { labels: [], datasets: [{ label: 'Qtd Veículos', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] },
@@ -458,7 +511,18 @@
                         responsive: true, 
                         maintainAspectRatio: false, 
                         plugins: { legend: { display: false } },
-                        scales: { x: { grid: { color: '#2A303C' } }, y: { grid: { display: false } } } 
+                        scales: { x: { grid: { color: '#2A303C' } }, y: { grid: { display: false } } },
+                        // Evento de Clique adicionado aqui
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const label = app.charts.priceRange.data.labels[index];
+                                app.showVehiclesByPrice(label);
+                            }
+                        },
+                        onHover: (event, chartElement) => {
+                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                        }
                     }
                 });
 
