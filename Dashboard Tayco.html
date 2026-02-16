@@ -1,51 +1,423 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AutoGestão - Tayco Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoGestão • Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0B0E14',
+                            card: '#151A25',
+                            border: '#2A303C',
+                            text: '#9CA3AF',
+                            textHighlight: '#FFFFFF'
+                        },
+                        brand: {
+                            primary: '#3B82F6', // Azul
+                            success: '#10B981', // Verde
+                            purple: '#8B5CF6', // Roxo
+                            danger: '#EF4444'  // Vermelho
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0B0E14; color: #E5E7EB; }
+        .nav-item.active { background-color: rgba(59, 130, 246, 0.1); color: #60A5FA; border-left: 3px solid #3B82F6; }
+        .glass-card { background: #151A25; border: 1px solid #2A303C; }
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #2A303C; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <aside class="w-64 flex flex-col border-r border-dark-border bg-dark-bg z-20">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center">
+                <i class="fa-solid fa-car text-white text-sm"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-white text-sm">AutoGestão</h1>
+                <p class="text-[10px] text-gray-500">Dashboard</p>
+            </div>
+        </div>
 
-  <style>
-    :root{
-      --bg:#0b0f1a;
-      --panel:#0f172a;
-      --panel2:#0b1224;
-      --muted:#94a3b8;
-      --text:#e5e7eb;
-      --border:rgba(148,163,184,.12);
-      --accent:#7c3aed;
-      --good:#22c55e;
-      --warn:#f59e0b;
-      --bad:#ef4444;
-      --cardRadius:16px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:radial-gradient(1000px 500px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
-                 radial-gradient(900px 600px at 80% 10%, rgba(34,197,94,.10), transparent 55%),
-                 var(--bg);
-      color:var(--text);
-    }
-    .app{
-      display:grid;
-      grid-template-columns: 260px 1fr;
-      min-height:100vh;
-    }
-    aside{
-      border-right:1px solid var(--border);
-      padding:18px 14px;
-      background:linear-gradient(180deg, rgba(15,23,42,.9), rgba(11,15,26,.9));
-      position:sticky; top:0; height:100vh;
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px; border-radius:14px;
-      background:rgba(124,58,237,.08);
-     
+        <nav class="flex-1 px-4 space-y-2 mt-4">
+            <button onclick="app.navigate('overview')" id="nav-overview" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-400 rounded-r-lg hover:text-white transition active">
+                <i class="fa-solid fa-grid-2"></i> Visão Geral
+            </button>
+            <button onclick="app.navigate('commercial')" id="nav-commercial" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-400 rounded-r-lg hover:text-white transition">
+                <i class="fa-solid fa-car-side"></i> Comercial
+            </button>
+            <button onclick="app.navigate('marketing')" id="nav-marketing" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-400 rounded-r-lg hover:text-white transition">
+                <i class="fa-solid fa-chart-line"></i> Marketing
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-dark-border">
+            <button onclick="ui.openConfig()" class="flex items-center gap-3 text-gray-400 hover:text-white text-sm">
+                <i class="fa-solid fa-gear"></i> Configurações
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-dark-bg">
+        <header class="h-16 border-b border-dark-border flex items-center justify-between px-8 bg-dark-bg">
+            <h2 id="page-title" class="text-lg font-semibold text-white">Visão Geral</h2>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-dark-card border border-dark-border rounded-lg px-3 py-1.5">
+                    <i class="fa-regular fa-calendar text-gray-500 text-xs"></i>
+                    <select id="date-range" class="bg-transparent text-xs text-white outline-none" onchange="app.refreshData()">
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="15">Últimos 15 dias</option>
+                        <option value="7">Últimos 7 dias</option>
+                    </select>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-brand-primary/20 text-brand-primary flex items-center justify-center text-xs font-bold">JD</div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+            
+            <div id="loading" class="hidden absolute inset-0 bg-dark-bg/80 flex items-center justify-center z-50">
+                <i class="fa-solid fa-circle-notch fa-spin text-brand-primary text-2xl"></i>
+            </div>
+
+            <div id="view-overview" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-card rounded-xl p-6 col-span-2">
+                        <h3 class="text-sm font-semibold text-white mb-4">Top Marcas (Vendas)</h3>
+                        <div class="h-64"><canvas id="chart-top-brands"></canvas></div>
+                    </div>
+                    <div class="glass-card rounded-xl p-6">
+                        <h3 class="text-sm font-semibold text-white mb-4">Mix de Marcas (Estoque)</h3>
+                        <div class="h-64"><canvas id="chart-mix-brands"></canvas></div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <h3 class="text-sm font-semibold text-white mb-4">Funil de Vendas</h3>
+                    <div class="h-40"><canvas id="chart-funnel"></canvas></div>
+                </div>
+            </div>
+
+            <div id="view-commercial" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="commercial-kpis"></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card rounded-xl p-6">
+                        <h3 class="text-sm font-semibold text-white mb-4">Faixa de Preço</h3>
+                        <div class="h-64"><canvas id="chart-price-range"></canvas></div>
+                    </div>
+                     <div class="glass-card rounded-xl p-6">
+                        <h3 class="text-sm font-semibold text-white mb-4">Dias em Estoque</h3>
+                         <div class="h-64 flex items-center justify-center text-gray-500 text-sm">Gráfico de Aging (Em breve)</div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-dark-border">
+                        <h3 class="text-sm font-semibold text-white">Estoque Detalhado</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-gray-400">
+                            <thead class="bg-dark-bg text-gray-200 uppercase font-medium">
+                                <tr>
+                                    <th class="px-6 py-3">Veículo</th>
+                                    <th class="px-6 py-3">Marca</th>
+                                    <th class="px-6 py-3">Ano</th>
+                                    <th class="px-6 py-3">Preço</th>
+                                    <th class="px-6 py-3 text-center">Dias</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-table-body" class="divide-y divide-dark-border">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-marketing" class="hidden space-y-6">
+                <div class="bg-brand-primary/10 border border-brand-primary/20 p-4 rounded-lg text-brand-primary text-sm mb-4">
+                    <i class="fa-solid fa-info-circle mr-2"></i> Dados de Marketing são demonstrativos. Integração com API Meta/Google necessária.
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card rounded-xl p-6 border-l-4 border-l-blue-500">
+                        <h3 class="text-blue-400 font-bold mb-4">Meta ADS</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><p class="text-gray-500 text-[10px] uppercase">Leads</p><p class="text-xl text-white font-bold">245</p></div>
+                            <div><p class="text-gray-500 text-[10px] uppercase">Investimento</p><p class="text-xl text-white font-bold">R$ 12.500</p></div>
+                            <div><p class="text-gray-500 text-[10px] uppercase">Custo/Lead</p><p class="text-xl text-white font-bold">R$ 51,02</p></div>
+                             <div><p class="text-gray-500 text-[10px] uppercase">ROAS</p><p class="text-xl text-white font-bold">12x</p></div>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-xl p-6 border-l-4 border-l-green-500">
+                        <h3 class="text-green-400 font-bold mb-4">Google ADS</h3>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div><p class="text-gray-500 text-[10px] uppercase">Leads</p><p class="text-xl text-white font-bold">189</p></div>
+                            <div><p class="text-gray-500 text-[10px] uppercase">Investimento</p><p class="text-xl text-white font-bold">R$ 9.800</p></div>
+                            <div><p class="text-gray-500 text-[10px] uppercase">Custo/Lead</p><p class="text-xl text-white font-bold">R$ 51,85</p></div>
+                             <div><p class="text-gray-500 text-[10px] uppercase">ROAS</p><p class="text-xl text-white font-bold">10x</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-xl p-6">
+                    <h3 class="text-sm font-semibold text-white mb-4">Origem dos Leads</h3>
+                    <div class="h-64"><canvas id="chart-sources"></canvas></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="config-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50">
+        <div class="glass-card p-6 rounded-xl w-96">
+            <h3 class="text-white font-bold mb-4">Conexão Supabase</h3>
+            <input type="text" id="sb-url" placeholder="Supabase URL" class="w-full bg-dark-bg border border-dark-border rounded p-2 text-white mb-3 text-sm">
+            <input type="password" id="sb-key" placeholder="Supabase Key (Anon)" class="w-full bg-dark-bg border border-dark-border rounded p-2 text-white mb-4 text-sm">
+            <div class="flex gap-2">
+                <button onclick="ui.closeConfig()" class="flex-1 py-2 text-gray-400 hover:text-white">Cancelar</button>
+                <button onclick="app.saveConfig()" class="flex-1 py-2 bg-brand-primary text-white rounded font-bold hover:bg-blue-600">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
+
+        // UI Controller
+        const ui = {
+            renderKpi: (label, value, subtext, icon, colorClass, containerId = 'view-overview') => {
+                const container = document.querySelector(`#${containerId} .grid`);
+                if(!container) return;
+                const html = `
+                    <div class="glass-card p-4 rounded-xl flex flex-col justify-between h-32 relative overflow-hidden group">
+                        <div class="absolute right-[-10px] top-[-10px] w-16 h-16 rounded-full opacity-5 ${colorClass}"></div>
+                        <div class="flex justify-between items-start z-10">
+                            <span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider">${label}</span>
+                            <div class="w-8 h-8 rounded-lg bg-dark-bg flex items-center justify-center border border-dark-border ${colorClass.replace('bg-', 'text-')}">
+                                <i class="${icon}"></i>
+                            </div>
+                        </div>
+                        <div class="z-10">
+                            <h4 class="text-2xl font-bold text-white mt-1">${value}</h4>
+                            <p class="text-[10px] ${subtext.includes('+') ? 'text-green-400' : 'text-gray-500'} mt-1 flex items-center gap-1">
+                                ${subtext}
+                            </p>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            },
+            clearKpis: (containerId = 'view-overview') => {
+                 const container = document.querySelector(`#${containerId} .grid`);
+                 if(container) container.innerHTML = '';
+            },
+            openConfig: () => document.getElementById('config-modal').classList.remove('hidden'),
+            closeConfig: () => document.getElementById('config-modal').classList.add('hidden'),
+            loading: (show) => document.getElementById('loading').classList.toggle('hidden', !show)
+        };
+
+        // App Logic
+        const app = {
+            sb: null,
+            data: {},
+            
+            init: async () => {
+                const url = localStorage.getItem('dash_sb_url');
+                const key = localStorage.getItem('dash_sb_key');
+
+                if (!url || !key) return ui.openConfig();
+
+                app.sb = supabase.createClient(url, key);
+                await app.refreshData();
+                app.renderCharts();
+            },
+
+            saveConfig: () => {
+                localStorage.setItem('dash_sb_url', document.getElementById('sb-url').value);
+                localStorage.setItem('dash_sb_key', document.getElementById('sb-key').value);
+                location.reload();
+            },
+
+            refreshData: async () => {
+                ui.loading(true);
+                ui.clearKpis();
+                ui.clearKpis('view-commercial'); // Clear commercial specific too
+
+                const days = parseInt(document.getElementById('date-range').value);
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - days);
+                const startDateStr = startDate.toISOString().split('T')[0];
+                const endDateStr = new Date().toISOString().split('T')[0];
+
+                try {
+                    // 1. Fetch KPI Summary (Function RPC)
+                    const { data: kpis, error: kpiError } = await app.sb.rpc('get_kpis', { 
+                        start_date: startDateStr, 
+                        end_date: endDateStr 
+                    });
+
+                    // 2. Fetch Charts Data
+                    const { data: stockData } = await app.sb.from('v_stock').select('*');
+                    const { data: salesData } = await app.sb.from('v_sales').select('*');
+                    
+                    // Fallback se RPC falhar ou for null
+                    const stats = kpis || { sales_volume: 0, stock_value: 0, stock_count: 0, avg_ticket: 0, avg_days: 0, leads_count: 0 };
+
+                    // Render Overview KPIs
+                    ui.renderKpi('Vendas Realizadas', salesData?.filter(s => s.closing_date >= startDateStr).length || 0, `Últimos ${days} dias`, 'fa-solid fa-chart-line', 'bg-green-500');
+                    ui.renderKpi('Valor Estoque', formatBRL(stats.stock_value), 'Total investido', 'fa-solid fa-dollar-sign', 'bg-blue-500');
+                    ui.renderKpi('Veículos', stats.stock_count, 'Em estoque', 'fa-solid fa-car', 'bg-purple-500');
+                    ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'Vendas do período', 'fa-solid fa-bullseye', 'bg-green-500');
+                    ui.renderKpi('Giro Estoque', `${Math.round(stats.avg_days)} dias`, 'Média atual', 'fa-regular fa-clock', 'bg-orange-500');
+                    ui.renderKpi('Total Leads', stats.leads_count, 'Base total', 'fa-solid fa-users', 'bg-blue-400');
+
+                    // Store data for charts
+                    app.data.stock = stockData || [];
+                    app.data.sales = salesData || [];
+                    
+                    app.renderStockTable(app.data.stock);
+                    app.updateCharts();
+
+                } catch (e) {
+                    console.error(e);
+                    // alert('Erro ao carregar dados. Verifique permissões.');
+                }
+                ui.loading(false);
+            },
+
+            navigate: (view) => {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById(`nav-${view}`).classList.add('active');
+                
+                ['overview', 'commercial', 'marketing'].forEach(v => {
+                    document.getElementById(`view-${v}`).classList.add('hidden');
+                });
+                document.getElementById(`view-${view}`).classList.remove('hidden');
+                
+                const titles = { overview: 'Visão Geral', commercial: 'Área Comercial', marketing: 'Marketing & ADS' };
+                document.getElementById('page-title').innerText = titles[view];
+            },
+
+            renderStockTable: (stock) => {
+                const tbody = document.getElementById('stock-table-body');
+                tbody.innerHTML = stock.map(car => `
+                    <tr class="hover:bg-dark-card/50 transition">
+                        <td class="px-6 py-4 font-medium text-white">${car.vehicle_name || 'N/A'}</td>
+                        <td class="px-6 py-4">${car.brand || '-'}</td>
+                        <td class="px-6 py-4">${car.year_model || '-'}</td>
+                        <td class="px-6 py-4 text-white font-mono">${formatBRL(car.price)}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold ${car.days_in_stock > 45 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}">
+                                ${car.days_in_stock} dias
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            charts: {},
+
+            renderCharts: () => {
+                Chart.defaults.color = '#6B7280';
+                Chart.defaults.borderColor = '#2A303C';
+
+                // Top Brands Chart
+                app.charts.topBrands = new Chart(document.getElementById('chart-top-brands'), {
+                    type: 'bar',
+                    data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+
+                // Mix Brands Chart
+                app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), {
+                    type: 'doughnut',
+                    data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right' } } }
+                });
+
+                // Price Range
+                 app.charts.priceRange = new Chart(document.getElementById('chart-price-range'), {
+                    type: 'bar',
+                    data: { labels: [], datasets: [{ label: 'Qtd Veículos', data: [], backgroundColor: '#8B5CF6', borderRadius: 4 }] },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+
+                // Funnel
+                app.charts.funnel = new Chart(document.getElementById('chart-funnel'), {
+                    type: 'bar',
+                    data: { labels: ['Impressões (Mkt)', 'Leads', 'Vendas'], datasets: [{ label: 'Conversão', data: [1000, 100, 10], backgroundColor: ['#2A303C', '#3B82F6', '#10B981'], borderRadius: 4 }] },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+                
+                // Marketing Sources (Static for now)
+                new Chart(document.getElementById('chart-sources'), {
+                    type: 'pie',
+                    data: { labels: ['Meta ADS', 'Google ADS', 'Indicação', 'Orgânico'], datasets: [{ data: [45, 35, 8, 12], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+                });
+            },
+
+            updateCharts: () => {
+                // Process Top Brands
+                const salesByBrand = app.data.sales.reduce((acc, curr) => {
+                    acc[curr.brand] = (acc[curr.brand] || 0) + 1;
+                    return acc;
+                }, {});
+                app.charts.topBrands.data.labels = Object.keys(salesByBrand);
+                app.charts.topBrands.data.datasets[0].data = Object.values(salesByBrand);
+                app.charts.topBrands.update();
+
+                // Process Mix Stock
+                const stockByBrand = app.data.stock.reduce((acc, curr) => {
+                    acc[curr.brand] = (acc[curr.brand] || 0) + 1;
+                    return acc;
+                }, {});
+                app.charts.mixBrands.data.labels = Object.keys(stockByBrand);
+                app.charts.mixBrands.data.datasets[0].data = Object.values(stockByBrand);
+                app.charts.mixBrands.update();
+
+                // Process Price Range
+                const ranges = { 'Até 50k': 0, '50k-100k': 0, '100k-150k': 0, '+150k': 0 };
+                app.data.stock.forEach(c => {
+                    if(c.price < 50000) ranges['Até 50k']++;
+                    else if(c.price < 100000) ranges['50k-100k']++;
+                    else if(c.price < 150000) ranges['100k-150k']++;
+                    else ranges['+150k']++;
+                });
+                app.charts.priceRange.data.labels = Object.keys(ranges);
+                app.charts.priceRange.data.datasets[0].data = Object.values(ranges);
+                app.charts.priceRange.update();
+            }
+        };
+
+        // Start
+        window.addEventListener('DOMContentLoaded', app.init);
+    </script>
+</body>
+</html>
