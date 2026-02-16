@@ -40,7 +40,6 @@
         
         .chart-container { position: relative; height: 100%; width: 100%; }
         
-        /* Efeito hover na tabela */
         .hover-row:hover td { background-color: rgba(59, 130, 246, 0.05); }
         .photo-trigger:hover { color: #60A5FA; cursor: pointer; }
     </style>
@@ -89,7 +88,7 @@
                         <option value="7">Últimos 7 dias</option>
                     </select>
                 </div>
-                </div>
+            </div>
         </header>
 
         <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar relative">
@@ -115,13 +114,32 @@
                     </div>
                 </div>
 
-                <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
+                 <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
                     <h3 class="text-gray-300 font-semibold mb-6 text-sm">Funil de Vendas</h3>
                     <div class="h-40 chart-container"><canvas id="chart-funnel"></canvas></div>
                 </div>
             </div>
 
             <div id="view-commercial" class="hidden space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4" id="commercial-kpis">
+                    </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
+                        <h3 class="text-gray-300 font-semibold mb-6 text-sm">Mix de Marcas</h3>
+                        <div class="h-64 chart-container"><canvas id="chart-mix-brands-com"></canvas></div>
+                    </div>
+                    <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
+                        <h3 class="text-gray-300 font-semibold mb-6 text-sm">Faixa de Preço</h3>
+                        <div class="h-64 chart-container"><canvas id="chart-price-range"></canvas></div>
+                    </div>
+                    <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
+                        <h3 class="text-gray-300 font-semibold mb-6 text-sm">Top Marcas (Vendas)</h3>
+                        <div class="h-64 chart-container"><canvas id="chart-top-brands-com"></canvas></div>
+                    </div>
+                </div>
+
                 <div class="glass-effect rounded-xl overflow-hidden border border-border shadow-xl shadow-black/20">
                     <div class="p-6 border-b border-border flex justify-between items-center bg-card/50">
                         <h3 class="text-white font-semibold text-sm">Estoque Detalhado</h3>
@@ -237,15 +255,15 @@
                             </p>
                         </div>
                     </div>`;
-                document.getElementById(containerId).innerHTML += html;
+                const container = document.getElementById(containerId);
+                if(container) container.innerHTML += html;
             },
             openConfig: () => document.getElementById('config-modal').classList.remove('hidden'),
             closeConfig: () => document.getElementById('config-modal').classList.add('hidden'),
             loading: (show) => document.getElementById('loading').classList.toggle('hidden', !show),
             
-            // New Image Logic
             openImage: (url, title) => {
-                if(!url || url === 'null') return; // Segurança
+                if(!url || url === 'null') return; 
                 document.getElementById('modal-img-src').src = url;
                 document.getElementById('modal-img-title').innerText = title;
                 document.getElementById('image-modal').classList.remove('hidden');
@@ -258,17 +276,20 @@
                     document.getElementById('modal-img-src').src = '';
                 }
             },
-
             updateSortIcons: (activeCol, order) => {
                 ['price', 'days_in_stock'].forEach(col => {
                     const icon = document.getElementById(`icon-${col}`);
-                    icon.className = 'fa-solid fa-sort ml-2 text-gray-600 group-hover:text-primary';
-                    icon.parentElement.classList.remove('active-sort');
+                    if(icon) {
+                        icon.className = 'fa-solid fa-sort ml-2 text-gray-600 group-hover:text-primary';
+                        icon.parentElement.classList.remove('active-sort');
+                    }
                 });
                 if (activeCol) {
                     const activeIcon = document.getElementById(`icon-${activeCol}`);
-                    activeIcon.className = `fa-solid fa-sort-${order === 'asc' ? 'up' : 'down'} ml-2 text-primary`;
-                    activeIcon.parentElement.classList.add('active-sort');
+                    if(activeIcon) {
+                        activeIcon.className = `fa-solid fa-sort-${order === 'asc' ? 'up' : 'down'} ml-2 text-primary`;
+                        activeIcon.parentElement.classList.add('active-sort');
+                    }
                 }
             }
         };
@@ -307,11 +328,16 @@
                 document.getElementById('page-title').innerText = 
                     view === 'overview' ? 'Visão Geral' : 
                     view === 'commercial' ? 'Área Comercial' : 'Marketing & Performance';
+                
+                // Força re-render dos KPIs comerciais se entrar na aba
+                if(view === 'commercial') app.renderCommercialKPIs();
             },
 
             refreshData: async () => {
                 ui.loading(true);
                 document.getElementById('overview-kpis').innerHTML = '';
+                document.getElementById('commercial-kpis').innerHTML = '';
+
                 const days = parseInt(document.getElementById('date-range').value);
                 const startDate = new Date(); startDate.setDate(startDate.getDate() - days);
                 
@@ -326,22 +352,38 @@
                     const { data: sales } = await app.sb.from('v_sales').select('*');
 
                     const stats = kpis || { sales_volume: 0, stock_value: 0, stock_count: 0, avg_ticket: 0, avg_days: 0, leads_count: 0 };
-                    
-                    ui.renderKpi('Vendas', sales?.filter(s => s.closing_date >= startDate.toISOString()).length || 0, 'vs período anterior', 'fa-solid fa-check', 'green');
-                    ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Total investido', 'fa-solid fa-dollar-sign', 'blue');
-                    ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray');
-                    ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'do Estoque', 'fa-solid fa-bullseye', 'green');
-                    ui.renderKpi('Leads', stats.leads_count, 'Total gerado', 'fa-solid fa-users', 'purple');
+                    app.stats = stats; // Salva para reuso
+
+                    // KPIs Visão Geral
+                    ui.renderKpi('Vendas', sales?.filter(s => s.closing_date >= startDate.toISOString()).length || 0, 'vs período anterior', 'fa-solid fa-check', 'green', 'overview-kpis');
+                    ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Total investido', 'fa-solid fa-dollar-sign', 'blue', 'overview-kpis');
+                    ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray', 'overview-kpis');
+                    ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'do Estoque', 'fa-solid fa-bullseye', 'green', 'overview-kpis');
+                    ui.renderKpi('Média Dias Estoque', `${Math.round(stats.avg_days)} dias`, 'Giro de pátio', 'fa-regular fa-clock', 'green', 'overview-kpis');
 
                     app.data = { stock: stock || [], sales: sales || [] };
+                    
+                    app.renderCommercialKPIs();
                     app.renderStockTable();
                     app.updateCharts();
 
                 } catch (e) { 
                     console.error(e);
-                    if(!app.data.stock) ui.renderKpi('Demo Mode', 'R$ 0,00', 'Conecte o Banco', 'fa-solid fa-plug', 'gray');
+                    if(!app.data.stock) ui.renderKpi('Demo Mode', 'R$ 0,00', 'Conecte o Banco', 'fa-solid fa-plug', 'gray', 'overview-kpis');
                 }
                 ui.loading(false);
+            },
+
+            renderCommercialKPIs: () => {
+                const container = document.getElementById('commercial-kpis');
+                if(!container) return;
+                container.innerHTML = '';
+                // Repete os KPIs importantes no topo do Comercial
+                const stats = app.stats || { stock_value: 0, stock_count: 0, avg_ticket: 0, avg_days: 0 };
+                ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Investido', 'fa-solid fa-dollar-sign', 'blue', 'commercial-kpis');
+                ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray', 'commercial-kpis');
+                ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'Estoque', 'fa-solid fa-bullseye', 'green', 'commercial-kpis');
+                ui.renderKpi('Média Dias Estoque', `${Math.round(stats.avg_days)} dias`, 'Giro', 'fa-regular fa-clock', 'green', 'commercial-kpis');
             },
 
             sortStock: (column) => {
@@ -389,50 +431,72 @@
                 Chart.defaults.color = '#6B7280';
                 Chart.defaults.borderColor = '#2A303C';
                 
-                app.charts.topBrands = new Chart(document.getElementById('chart-top-brands'), {
+                const commonBarOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } };
+                const commonPieOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#9CA3AF', usePointStyle: true, font: { size: 10 } } } } };
+
+                // Overview Charts
+                app.charts.topBrands = new Chart(document.getElementById('chart-top-brands'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
+                app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
+                app.charts.funnel = new Chart(document.getElementById('chart-funnel'), { type: 'bar', data: { labels: ['Impressões', 'Cliques', 'Leads', 'Vendas'], datasets: [{ data: [15000, 3200, 450, 42], backgroundColor: ['#1F2937', '#374151', '#3B82F6', '#10B981'], borderRadius: 4, barPercentage: 0.5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } } });
+
+                // Commercial Tab Charts
+                app.charts.mixBrandsCom = new Chart(document.getElementById('chart-mix-brands-com'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
+                app.charts.topBrandsCom = new Chart(document.getElementById('chart-top-brands-com'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
+                
+                // NOVO: Price Range Chart
+                app.charts.priceRange = new Chart(document.getElementById('chart-price-range'), {
                     type: 'bar',
-                    data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4, hoverBackgroundColor: '#60A5FA' }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } }
+                    data: { labels: [], datasets: [{ label: 'Qtd Veículos', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] },
+                    options: { 
+                        indexAxis: 'y', 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { legend: { display: false } },
+                        scales: { x: { grid: { color: '#2A303C' } }, y: { grid: { display: false } } } 
+                    }
                 });
 
-                app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), {
-                    type: 'doughnut',
-                    data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#9CA3AF', usePointStyle: true, font: { size: 10 } } } } }
-                });
-
-                app.charts.funnel = new Chart(document.getElementById('chart-funnel'), {
-                    type: 'bar',
-                    data: { labels: ['Impressões', 'Cliques', 'Leads', 'Vendas'], datasets: [{ data: [15000, 3200, 450, 42], backgroundColor: ['#1F2937', '#374151', '#3B82F6', '#10B981'], borderRadius: 4, barPercentage: 0.5 }] },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } }
-                });
-
-                app.charts.sourcesBar = new Chart(document.getElementById('chart-sources-bar'), {
-                    type: 'bar',
-                    data: { labels: ['Leads', 'Vendas'], datasets: [
-                        { label: 'Meta', data: [245, 18], backgroundColor: '#8B5CF6', borderRadius: 4 },
-                        { label: 'Google', data: [189, 14], backgroundColor: '#10B981', borderRadius: 4 }
-                    ]},
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true } } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } }
-                });
-
-                app.charts.sourcesPie = new Chart(document.getElementById('chart-sources-pie'), {
-                    type: 'pie',
-                    data: { labels: ['Meta ADS', 'Google ADS', 'Orgânico', 'Indicação'], datasets: [{ data: [45, 35, 12, 8], backgroundColor: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { usePointStyle: true } } } }
-                });
+                // Marketing Charts
+                app.charts.sourcesBar = new Chart(document.getElementById('chart-sources-bar'), { type: 'bar', data: { labels: ['Leads', 'Vendas'], datasets: [{ label: 'Meta', data: [245, 18], backgroundColor: '#8B5CF6', borderRadius: 4 }, { label: 'Google', data: [189, 14], backgroundColor: '#10B981', borderRadius: 4 }] }, options: commonBarOptions });
+                app.charts.sourcesPie = new Chart(document.getElementById('chart-sources-pie'), { type: 'pie', data: { labels: ['Meta ADS', 'Google ADS', 'Orgânico', 'Indicação'], datasets: [{ data: [45, 35, 12, 8], backgroundColor: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
             },
 
             updateCharts: () => {
                 const salesBrand = app.data.sales.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
+                const stockBrand = app.data.stock.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
+
+                // Update Overview
                 app.charts.topBrands.data.labels = Object.keys(salesBrand);
                 app.charts.topBrands.data.datasets[0].data = Object.values(salesBrand);
                 app.charts.topBrands.update();
 
-                const stockBrand = app.data.stock.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
                 app.charts.mixBrands.data.labels = Object.keys(stockBrand);
                 app.charts.mixBrands.data.datasets[0].data = Object.values(stockBrand);
                 app.charts.mixBrands.update();
+
+                // Update Commercial (Mirrors Overview + New Chart)
+                app.charts.mixBrandsCom.data.labels = Object.keys(stockBrand);
+                app.charts.mixBrandsCom.data.datasets[0].data = Object.values(stockBrand);
+                app.charts.mixBrandsCom.update();
+
+                app.charts.topBrandsCom.data.labels = Object.keys(salesBrand);
+                app.charts.topBrandsCom.data.datasets[0].data = Object.values(salesBrand);
+                app.charts.topBrandsCom.update();
+
+                // Lógica da Faixa de Preço
+                const ranges = { 'Até R$ 50k': 0, 'R$ 50k - 80k': 0, 'R$ 80k - 120k': 0, 'R$ 120k - 180k': 0, 'Acima de R$ 180k': 0 };
+                app.data.stock.forEach(c => {
+                    const p = c.price;
+                    if (p < 50000) ranges['Até R$ 50k']++;
+                    else if (p < 80000) ranges['R$ 50k - 80k']++;
+                    else if (p < 120000) ranges['R$ 80k - 120k']++;
+                    else if (p < 180000) ranges['R$ 120k - 180k']++;
+                    else ranges['Acima de R$ 180k']++;
+                });
+
+                app.charts.priceRange.data.labels = Object.keys(ranges);
+                app.charts.priceRange.data.datasets[0].data = Object.values(ranges);
+                app.charts.priceRange.update();
             }
         };
 
