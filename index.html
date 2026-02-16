@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoGestão • Dashboard</title>
+    <title>BeMore Gestão • Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -16,12 +16,13 @@
             theme: {
                 extend: {
                     colors: {
-                        bg: '#0B0E14',       // Fundo Lovable
-                        card: '#151A25',     // Card Escuro
-                        border: '#2A303C',   // Bordas sutis
-                        primary: '#3B82F6',  // Azul
-                        success: '#10B981',  // Verde
-                        purple: '#8B5CF6',   // Roxo Marketing
+                        bg: '#0B0E14',       /* Fundo Profundo */
+                        card: '#151A25',     /* Card Escuro */
+                        border: '#2A303C',   /* Bordas sutis */
+                        primary: '#3B82F6',  /* Azul Brand */
+                        success: '#10B981',  /* Verde */
+                        purple: '#8B5CF6',   /* Roxo Marketing */
+                        danger: '#EF4444'
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
@@ -30,22 +31,31 @@
     </script>
     <style>
         body { background-color: #0B0E14; color: #F3F4F6; }
-        .glass-effect { background: rgba(21, 26, 37, 0.7); backdrop-filter: blur(10px); border: 1px solid #2A303C; }
+        .glass-effect { background: #151A25; border: 1px solid #2A303C; }
         .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #60A5FA; border-left: 3px solid #3B82F6; }
+        /* Scrollbar fina e moderna */
         ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #2A303C; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3B82F6; }
+        
+        .chart-container { position: relative; height: 100%; width: 100%; }
+        
+        /* Efeito de hover nas tabelas */
+        .sort-icon { transition: transform 0.2s; }
+        th.active-sort { color: #3B82F6; }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden text-sm">
+<body class="h-screen flex overflow-hidden text-sm font-sans selection:bg-primary/30 selection:text-white">
 
-    <aside class="w-64 bg-bg border-r border-border flex flex-col z-20">
+    <aside class="w-64 bg-bg border-r border-border flex flex-col z-20 hidden md:flex">
         <div class="p-6 flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-blue-900/20">
-                <i class="fa-solid fa-car text-white"></i>
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-rocket text-white text-sm"></i>
             </div>
             <div>
-                <h1 class="font-bold text-white text-sm">AutoGestão</h1>
-                <p class="text-[10px] text-gray-500">Dashboard</p>
+                <h1 class="font-bold text-white text-sm tracking-wide">BeMore <span class="text-primary font-normal">Gestão</span></h1>
+                <p class="text-[10px] text-gray-500">Dashboard Comercial</p>
             </div>
         </div>
 
@@ -62,70 +72,76 @@
         </nav>
 
         <div class="p-4 border-t border-border">
-            <button onclick="ui.openConfig()" class="flex items-center gap-3 text-gray-500 hover:text-white w-full px-4 py-2">
+            <button onclick="ui.openConfig()" class="flex items-center gap-3 text-gray-500 hover:text-white w-full px-4 py-2 transition">
                 <i class="fa-solid fa-gear w-5"></i> Configurações
             </button>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <header class="h-16 border-b border-border flex items-center justify-between px-8 bg-bg/95 backdrop-blur z-10">
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-bg">
+        <header class="h-16 border-b border-border flex items-center justify-between px-8 bg-bg z-10">
             <h2 id="page-title" class="text-lg font-semibold text-white">Visão Geral</h2>
             <div class="flex items-center gap-4">
-                <div class="bg-card border border-border rounded-lg px-3 py-1.5 flex items-center gap-2">
+                <div class="bg-card border border-border rounded-lg px-3 py-1.5 flex items-center gap-2 hover:border-primary/50 transition cursor-pointer">
                     <i class="fa-regular fa-calendar text-gray-500"></i>
-                    <select id="date-range" onchange="app.refreshData()" class="bg-transparent text-gray-300 outline-none text-xs">
+                    <select id="date-range" onchange="app.refreshData()" class="bg-transparent text-gray-300 outline-none text-xs cursor-pointer">
                         <option value="30">Últimos 30 dias</option>
                         <option value="15">Últimos 15 dias</option>
                         <option value="7">Últimos 7 dias</option>
                     </select>
                 </div>
-                <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">JD</div>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-purple-500 flex items-center justify-center font-bold text-xs text-white shadow-lg">JD</div>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar relative">
+        <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar relative">
             
-            <div id="loading" class="absolute inset-0 bg-bg/80 z-50 flex items-center justify-center hidden">
-                <i class="fa-solid fa-circle-notch fa-spin text-primary text-3xl"></i>
+            <div id="loading" class="absolute inset-0 bg-bg/90 z-50 flex items-center justify-center hidden backdrop-blur-sm">
+                <div class="flex flex-col items-center gap-4">
+                    <i class="fa-solid fa-circle-notch fa-spin text-primary text-3xl"></i>
+                    <p class="text-gray-400 text-xs animate-pulse">Sincronizando dados...</p>
+                </div>
             </div>
 
-            <div id="view-overview" class="space-y-6 animate-fade-in">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4" id="overview-kpis">
-                    </div>
+            <div id="view-overview" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4" id="overview-kpis"></div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="glass-effect rounded-xl p-6 col-span-2">
-                        <h3 class="text-gray-300 font-semibold mb-6">Top 5 Marcas (Vendas)</h3>
-                        <div class="h-64"><canvas id="chart-top-brands"></canvas></div>
+                    <div class="glass-effect rounded-xl p-6 col-span-2 shadow-xl shadow-black/20">
+                        <h3 class="text-gray-300 font-semibold mb-6 text-sm">Top 5 Marcas (Vendas)</h3>
+                        <div class="h-64 chart-container"><canvas id="chart-top-brands"></canvas></div>
                     </div>
-                    <div class="glass-effect rounded-xl p-6">
-                        <h3 class="text-gray-300 font-semibold mb-6">Mix de Marcas (Estoque)</h3>
-                        <div class="h-64"><canvas id="chart-mix-brands"></canvas></div>
+                    <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
+                        <h3 class="text-gray-300 font-semibold mb-6 text-sm">Mix de Marcas (Estoque)</h3>
+                        <div class="h-64 chart-container"><canvas id="chart-mix-brands"></canvas></div>
                     </div>
                 </div>
 
-                <div class="glass-effect rounded-xl p-6">
-                    <h3 class="text-gray-300 font-semibold mb-6">Funil de Vendas</h3>
-                    <div class="h-40"><canvas id="chart-funnel"></canvas></div>
+                <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
+                    <h3 class="text-gray-300 font-semibold mb-6 text-sm">Funil de Vendas</h3>
+                    <div class="h-40 chart-container"><canvas id="chart-funnel"></canvas></div>
                 </div>
             </div>
 
             <div id="view-commercial" class="hidden space-y-6">
-                <div class="glass-effect rounded-xl overflow-hidden border border-border">
-                    <div class="p-6 border-b border-border flex justify-between items-center">
-                        <h3 class="text-white font-semibold">Estoque Detalhado</h3>
-                        <span class="text-xs bg-primary/20 text-primary px-2 py-1 rounded" id="stock-count-badge">0 veículos</span>
+                <div class="glass-effect rounded-xl overflow-hidden border border-border shadow-xl shadow-black/20">
+                    <div class="p-6 border-b border-border flex justify-between items-center bg-card/50">
+                        <h3 class="text-white font-semibold text-sm">Estoque Detalhado</h3>
+                        <span class="text-xs bg-primary/20 text-primary border border-primary/20 px-3 py-1 rounded-full font-medium" id="stock-count-badge">0 veículos</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
-                            <thead class="bg-card text-gray-400 text-xs uppercase">
+                            <thead class="bg-card text-gray-500 text-xs uppercase font-semibold">
                                 <tr>
                                     <th class="px-6 py-4">Veículo</th>
                                     <th class="px-6 py-4">Marca</th>
                                     <th class="px-6 py-4">Ano</th>
-                                    <th class="px-6 py-4">Preço</th>
-                                    <th class="px-6 py-4 text-center">Dias em Estoque</th>
+                                    <th class="px-6 py-4 cursor-pointer hover:text-white transition group" onclick="app.sortStock('price')">
+                                        Preço <i id="icon-price" class="fa-solid fa-sort ml-2 text-gray-600 group-hover:text-primary"></i>
+                                    </th>
+                                    <th class="px-6 py-4 text-center cursor-pointer hover:text-white transition group" onclick="app.sortStock('days_in_stock')">
+                                        Dias em Estoque <i id="icon-days_in_stock" class="fa-solid fa-sort ml-2 text-gray-600 group-hover:text-primary"></i>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="stock-table-body" class="divide-y divide-border text-gray-300 text-xs">
@@ -137,10 +153,9 @@
 
             <div id="view-marketing" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="glass-effect rounded-xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
-                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-purple-500/20 rounded-full blur-xl group-hover:bg-purple-500/30 transition"></div>
-                        <h3 class="text-purple-400 font-bold mb-6 text-lg"><i class="fa-brands fa-meta mr-2"></i> Meta ADS</h3>
+                    <div class="glass-effect rounded-xl p-6 relative overflow-hidden group border-t-4 border-purple-500 shadow-lg hover:shadow-purple-500/10 transition duration-500">
+                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition"></div>
+                        <h3 class="text-purple-400 font-bold mb-6 text-lg flex items-center gap-2"><i class="fa-brands fa-meta"></i> Meta ADS</h3>
                         <div class="grid grid-cols-2 gap-y-6 gap-x-4">
                             <div><p class="text-gray-500 text-[10px] uppercase font-bold">Leads</p><p class="text-2xl text-white font-bold">245</p></div>
                             <div><p class="text-gray-500 text-[10px] uppercase font-bold">Investimento</p><p class="text-2xl text-white font-bold">R$ 12.5k</p></div>
@@ -149,10 +164,9 @@
                         </div>
                     </div>
 
-                    <div class="glass-effect rounded-xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-500/20 rounded-full blur-xl group-hover:bg-green-500/30 transition"></div>
-                        <h3 class="text-green-400 font-bold mb-6 text-lg"><i class="fa-brands fa-google mr-2"></i> Google ADS</h3>
+                    <div class="glass-effect rounded-xl p-6 relative overflow-hidden group border-t-4 border-green-500 shadow-lg hover:shadow-green-500/10 transition duration-500">
+                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition"></div>
+                        <h3 class="text-green-400 font-bold mb-6 text-lg flex items-center gap-2"><i class="fa-brands fa-google"></i> Google ADS</h3>
                         <div class="grid grid-cols-2 gap-y-6 gap-x-4">
                             <div><p class="text-gray-500 text-[10px] uppercase font-bold">Leads</p><p class="text-2xl text-white font-bold">189</p></div>
                             <div><p class="text-gray-500 text-[10px] uppercase font-bold">Investimento</p><p class="text-2xl text-white font-bold">R$ 9.8k</p></div>
@@ -164,12 +178,12 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="glass-effect rounded-xl p-6">
-                        <h3 class="text-gray-300 font-semibold mb-4">Meta ADS vs Google ADS</h3>
-                        <div class="h-64"><canvas id="chart-sources-bar"></canvas></div>
+                        <h3 class="text-gray-300 font-semibold mb-4 text-sm">Performance por Canal</h3>
+                        <div class="h-64 chart-container"><canvas id="chart-sources-bar"></canvas></div>
                     </div>
                      <div class="glass-effect rounded-xl p-6">
-                        <h3 class="text-gray-300 font-semibold mb-4">Origem dos Leads</h3>
-                        <div class="h-64"><canvas id="chart-sources-pie"></canvas></div>
+                        <h3 class="text-gray-300 font-semibold mb-4 text-sm">Origem dos Leads</h3>
+                        <div class="h-64 chart-container"><canvas id="chart-sources-pie"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -178,19 +192,19 @@
     </main>
 
     <div id="config-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-card border border-border p-6 rounded-xl w-96 shadow-2xl">
+        <div class="bg-card border border-border p-6 rounded-xl w-96 shadow-2xl animate-fade-in-up">
             <h3 class="text-white font-bold mb-4 text-lg">Conexão Banco de Dados</h3>
             <p class="text-gray-500 text-xs mb-4">Insira as credenciais do seu Supabase.</p>
             
             <label class="text-xs text-gray-400 font-bold uppercase">URL</label>
-            <input type="text" id="sb-url" class="w-full bg-bg border border-border rounded p-2 text-white mb-3 text-sm focus:border-primary outline-none">
+            <input type="text" id="sb-url" class="w-full bg-bg border border-border rounded p-2 text-white mb-3 text-sm focus:border-primary outline-none focus:ring-1 focus:ring-primary">
             
             <label class="text-xs text-gray-400 font-bold uppercase">Anon Key</label>
-            <input type="password" id="sb-key" class="w-full bg-bg border border-border rounded p-2 text-white mb-6 text-sm focus:border-primary outline-none">
+            <input type="password" id="sb-key" class="w-full bg-bg border border-border rounded p-2 text-white mb-6 text-sm focus:border-primary outline-none focus:ring-1 focus:ring-primary">
             
             <div class="flex gap-2">
-                <button onclick="ui.closeConfig()" class="flex-1 py-2 text-gray-400 hover:text-white transition">Cancelar</button>
-                <button onclick="app.saveConfig()" class="flex-1 py-2 bg-primary text-white rounded font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-900/40">Salvar Conexão</button>
+                <button onclick="ui.closeConfig()" class="flex-1 py-2 text-gray-400 hover:text-white transition rounded hover:bg-white/5">Cancelar</button>
+                <button onclick="app.saveConfig()" class="flex-1 py-2 bg-primary text-white rounded font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-500/30">Salvar Conexão</button>
             </div>
         </div>
     </div>
@@ -200,18 +214,24 @@
         
         const ui = {
             renderKpi: (label, value, subtext, icon, color, containerId = 'overview-kpis') => {
+                const colors = {
+                    green: 'text-green-400 bg-green-500/10 border-green-500/20',
+                    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+                    purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+                    gray: 'text-gray-400 bg-gray-500/10 border-gray-500/20'
+                };
+                
                 const html = `
-                    <div class="glass-effect p-5 rounded-xl flex flex-col justify-between h-32 relative overflow-hidden group hover:border-${color}-500/30 transition">
-                        <div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-${color}-500/10 rounded-full blur-xl"></div>
+                    <div class="glass-effect p-5 rounded-xl flex flex-col justify-between h-32 relative overflow-hidden group border hover:border-opacity-50 transition duration-300 ${colors[color].split(' ')[2]}">
                         <div class="flex justify-between items-start z-10">
                             <span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider">${label}</span>
-                            <div class="w-8 h-8 rounded bg-bg border border-border flex items-center justify-center text-${color}-500">
+                            <div class="w-8 h-8 rounded bg-bg border border-border flex items-center justify-center ${colors[color].split(' ')[0]} ${colors[color].split(' ')[1]}">
                                 <i class="${icon}"></i>
                             </div>
                         </div>
                         <div class="z-10 mt-auto">
                             <h4 class="text-2xl font-bold text-white">${value}</h4>
-                            <p class="text-[10px] text-${color}-400 mt-1 flex items-center gap-1 font-medium">
+                            <p class="text-[10px] ${color == 'green' ? 'text-green-400' : 'text-gray-500'} mt-1 flex items-center gap-1 font-medium">
                                 <i class="fa-solid fa-arrow-trend-up"></i> ${subtext}
                             </p>
                         </div>
@@ -220,22 +240,43 @@
             },
             openConfig: () => document.getElementById('config-modal').classList.remove('hidden'),
             closeConfig: () => document.getElementById('config-modal').classList.add('hidden'),
-            loading: (show) => document.getElementById('loading').classList.toggle('hidden', !show)
+            loading: (show) => document.getElementById('loading').classList.toggle('hidden', !show),
+            
+            updateSortIcons: (activeCol, order) => {
+                // Reset icons
+                ['price', 'days_in_stock'].forEach(col => {
+                    const icon = document.getElementById(`icon-${col}`);
+                    icon.className = 'fa-solid fa-sort ml-2 text-gray-600 group-hover:text-primary';
+                    icon.parentElement.classList.remove('active-sort');
+                });
+                
+                if (activeCol) {
+                    const activeIcon = document.getElementById(`icon-${activeCol}`);
+                    activeIcon.className = `fa-solid fa-sort-${order === 'asc' ? 'up' : 'down'} ml-2 text-primary`;
+                    activeIcon.parentElement.classList.add('active-sort');
+                }
+            }
         };
 
         const app = {
             sb: null,
             data: {},
             charts: {},
+            sortState: { column: null, order: 'desc' }, // Estado da ordenação
 
             init: async () => {
                 const url = localStorage.getItem('dash_sb_url');
                 const key = localStorage.getItem('dash_sb_key');
                 if (!url || !key) return ui.openConfig();
                 
-                app.sb = supabase.createClient(url, key);
-                app.initCharts();
-                await app.refreshData();
+                try {
+                    app.sb = supabase.createClient(url, key);
+                    app.initCharts();
+                    await app.refreshData();
+                } catch(e) {
+                    console.error("Erro init:", e);
+                    ui.openConfig();
+                }
             },
 
             saveConfig: () => {
@@ -263,11 +304,13 @@
                 
                 try {
                     // 1. KPIs via RPC
-                    const { data: kpis } = await app.sb.rpc('get_kpis', { 
+                    const { data: kpis, error } = await app.sb.rpc('get_kpis', { 
                         start_date: startDate.toISOString().split('T')[0], 
                         end_date: new Date().toISOString().split('T')[0] 
                     });
                     
+                    if(error) throw error;
+
                     // 2. Views Data
                     const { data: stock } = await app.sb.from('v_stock').select('*');
                     const { data: sales } = await app.sb.from('v_sales').select('*');
@@ -278,28 +321,61 @@
                     ui.renderKpi('Vendas', sales?.filter(s => s.closing_date >= startDate.toISOString()).length || 0, 'vs período anterior', 'fa-solid fa-check', 'green');
                     ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Total investido', 'fa-solid fa-dollar-sign', 'blue');
                     ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray');
-                    ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'Performance', 'fa-solid fa-bullseye', 'green');
+                    ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'do Estoque', 'fa-solid fa-bullseye', 'green');
                     ui.renderKpi('Leads', stats.leads_count, 'Total gerado', 'fa-solid fa-users', 'purple');
 
                     // Stock Table & Charts Logic
                     app.data = { stock: stock || [], sales: sales || [] };
-                    app.renderStockTable();
+                    app.renderStockTable(); // Renderiza inicial
                     app.updateCharts();
 
-                } catch (e) { console.error(e); }
+                } catch (e) { 
+                    console.error(e);
+                    if(!app.data.stock) ui.renderKpi('Demo Mode', 'R$ 0,00', 'Conecte o Banco', 'fa-solid fa-plug', 'gray');
+                }
                 ui.loading(false);
+            },
+
+            // Nova Função de Ordenação
+            sortStock: (column) => {
+                // Inverte ordem se clicar na mesma coluna
+                if (app.sortState.column === column) {
+                    app.sortState.order = app.sortState.order === 'asc' ? 'desc' : 'asc';
+                } else {
+                    app.sortState.column = column;
+                    app.sortState.order = 'desc'; // Padrão descrescente para valores
+                }
+                
+                ui.updateSortIcons(column, app.sortState.order);
+                app.renderStockTable();
             },
 
             renderStockTable: () => {
                 document.getElementById('stock-count-badge').innerText = `${app.data.stock.length} veículos`;
-                document.getElementById('stock-table-body').innerHTML = app.data.stock.map(c => `
-                    <tr class="hover:bg-bg transition group">
+                
+                // Lógica de Ordenação
+                let displayData = [...app.data.stock];
+                if (app.sortState.column) {
+                    displayData.sort((a, b) => {
+                        let valA = a[app.sortState.column];
+                        let valB = b[app.sortState.column];
+                        
+                        // Garante que é número
+                        valA = parseFloat(valA) || 0;
+                        valB = parseFloat(valB) || 0;
+
+                        return app.sortState.order === 'asc' ? valA - valB : valB - valA;
+                    });
+                }
+
+                document.getElementById('stock-table-body').innerHTML = displayData.map(c => `
+                    <tr class="hover:bg-white/5 transition group border-b border-border last:border-0">
                         <td class="px-6 py-4 font-bold text-white group-hover:text-primary transition">${c.vehicle_name || 'N/A'}</td>
                         <td class="px-6 py-4">${c.brand || '-'}</td>
                         <td class="px-6 py-4">${c.year_model || '-'}</td>
-                        <td class="px-6 py-4 font-mono text-white">${formatBRL(c.price)}</td>
+                        <td class="px-6 py-4 font-mono text-white tracking-wide">${formatBRL(c.price)}</td>
                         <td class="px-6 py-4 text-center">
-                            <span class="px-2 py-1 rounded text-[10px] font-bold ${c.days_in_stock > 60 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold ${c.days_in_stock > 60 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}">
                                 ${c.days_in_stock} dias
                             </span>
                         </td>
@@ -312,14 +388,14 @@
                 
                 app.charts.topBrands = new Chart(document.getElementById('chart-top-brands'), {
                     type: 'bar',
-                    data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4, hoverBackgroundColor: '#60A5FA' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } }
                 });
 
                 app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), {
                     type: 'doughnut',
                     data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#9CA3AF', usePointStyle: true } } } }
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#9CA3AF', usePointStyle: true, font: { size: 10 } } } } }
                 });
 
                 app.charts.funnel = new Chart(document.getElementById('chart-funnel'), {
@@ -332,10 +408,10 @@
                 app.charts.sourcesBar = new Chart(document.getElementById('chart-sources-bar'), {
                     type: 'bar',
                     data: { labels: ['Leads', 'Vendas'], datasets: [
-                        { label: 'Meta', data: [245, 18], backgroundColor: '#8B5CF6' },
-                        { label: 'Google', data: [189, 14], backgroundColor: '#10B981' }
+                        { label: 'Meta', data: [245, 18], backgroundColor: '#8B5CF6', borderRadius: 4 },
+                        { label: 'Google', data: [189, 14], backgroundColor: '#10B981', borderRadius: 4 }
                     ]},
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true } } } }
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true } } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } }
                 });
 
                 app.charts.sourcesPie = new Chart(document.getElementById('chart-sources-pie'), {
@@ -346,13 +422,11 @@
             },
 
             updateCharts: () => {
-                // Top Brands Logic
                 const salesBrand = app.data.sales.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
                 app.charts.topBrands.data.labels = Object.keys(salesBrand);
                 app.charts.topBrands.data.datasets[0].data = Object.values(salesBrand);
                 app.charts.topBrands.update();
 
-                // Mix Brands Logic
                 const stockBrand = app.data.stock.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
                 app.charts.mixBrands.data.labels = Object.keys(stockBrand);
                 app.charts.mixBrands.data.datasets[0].data = Object.values(stockBrand);
