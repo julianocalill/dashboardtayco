@@ -126,12 +126,14 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
-                        <h3 class="text-gray-300 font-semibold mb-6 text-sm">Mix de Marcas</h3>
+                        <h3 class="text-gray-300 font-semibold mb-6 text-sm flex justify-between items-center">
+                            Mix de Marcas <span class="text-[10px] text-primary font-normal bg-primary/10 px-2 py-0.5 rounded">Clique para ver</span>
+                        </h3>
                         <div class="h-64 chart-container"><canvas id="chart-mix-brands-com"></canvas></div>
                     </div>
                     <div class="glass-effect rounded-xl p-6 shadow-xl shadow-black/20">
                         <h3 class="text-gray-300 font-semibold mb-6 text-sm flex justify-between items-center">
-                            Faixa de Preço <span class="text-[10px] text-primary font-normal bg-primary/10 px-2 py-0.5 rounded">Clique na barra para ver</span>
+                            Faixa de Preço <span class="text-[10px] text-primary font-normal bg-primary/10 px-2 py-0.5 rounded">Clique para ver</span>
                         </h3>
                         <div class="h-64 chart-container"><canvas id="chart-price-range"></canvas></div>
                     </div>
@@ -295,11 +297,14 @@
                 const content = document.getElementById('list-modal-content');
                 
                 if (vehicles.length === 0) {
-                    content.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum veículo nesta faixa.</p>';
+                    content.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum veículo encontrado.</p>';
                 } else {
                     content.innerHTML = vehicles.map(v => `
                         <div class="flex justify-between items-center bg-bg/50 p-3 rounded hover:bg-white/5 transition border border-transparent hover:border-primary/20">
-                            <span class="text-gray-300 font-medium text-xs truncate max-w-[60%]">${v.vehicle_name}</span>
+                            <div class="flex flex-col max-w-[65%]">
+                                <span class="text-gray-200 font-medium text-xs truncate">${v.vehicle_name}</span>
+                                <span class="text-[10px] text-gray-500">${v.brand || '-'}</span>
+                            </div>
                             <span class="text-primary font-mono text-xs font-bold">${formatBRL(v.price)}</span>
                         </div>
                     `).join('');
@@ -470,7 +475,7 @@
                     </tr>`).join('');
             },
 
-            // Helper para filtrar os carros para o popup
+            // Helper para filtrar os carros para o popup por PREÇO
             showVehiclesByPrice: (rangeLabel) => {
                 const vehicles = app.data.stock.filter(c => {
                     const p = parseFloat(c.price) || 0;
@@ -482,10 +487,15 @@
                     return false;
                 });
                 
-                // Ordena do mais caro pro mais barato por padrão
                 vehicles.sort((a,b) => (parseFloat(b.price)||0) - (parseFloat(a.price)||0));
-                
                 ui.openList(rangeLabel, vehicles);
+            },
+
+            // Helper para filtrar os carros para o popup por MARCA
+            showVehiclesByBrand: (brandName) => {
+                const vehicles = app.data.stock.filter(c => c.brand === brandName);
+                vehicles.sort((a,b) => (parseFloat(b.price)||0) - (parseFloat(a.price)||0));
+                ui.openList(`Veículos: ${brandName}`, vehicles);
             },
 
             initCharts: () => {
@@ -499,7 +509,25 @@
                 app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
                 app.charts.funnel = new Chart(document.getElementById('chart-funnel'), { type: 'bar', data: { labels: ['Impressões', 'Cliques', 'Leads', 'Vendas'], datasets: [{ data: [15000, 3200, 450, 42], backgroundColor: ['#1F2937', '#374151', '#3B82F6', '#10B981'], borderRadius: 4, barPercentage: 0.5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } } });
 
-                app.charts.mixBrandsCom = new Chart(document.getElementById('chart-mix-brands-com'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
+                // CHART MIX DE MARCAS COM CLICK
+                app.charts.mixBrandsCom = new Chart(document.getElementById('chart-mix-brands-com'), { 
+                    type: 'doughnut', 
+                    data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, 
+                    options: { 
+                        ...commonPieOptions,
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const label = app.charts.mixBrandsCom.data.labels[index];
+                                app.showVehiclesByBrand(label);
+                            }
+                        },
+                        onHover: (event, chartElement) => {
+                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                        }
+                    } 
+                });
+
                 app.charts.topBrandsCom = new Chart(document.getElementById('chart-top-brands-com'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
                 
                 // CHART FAIXA DE PREÇO COM CLICK
@@ -512,7 +540,6 @@
                         maintainAspectRatio: false, 
                         plugins: { legend: { display: false } },
                         scales: { x: { grid: { color: '#2A303C' } }, y: { grid: { display: false } } },
-                        // Evento de Clique adicionado aqui
                         onClick: (e, elements) => {
                             if (elements.length > 0) {
                                 const index = elements[0].index;
