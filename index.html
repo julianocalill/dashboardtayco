@@ -122,7 +122,7 @@
 
             <div id="view-commercial" class="hidden space-y-6">
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4" id="commercial-kpis">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" id="commercial-kpis">
                     </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -329,7 +329,6 @@
                     view === 'overview' ? 'Visão Geral' : 
                     view === 'commercial' ? 'Área Comercial' : 'Marketing & Performance';
                 
-                // Força re-render dos KPIs comerciais se entrar na aba
                 if(view === 'commercial') app.renderCommercialKPIs();
             },
 
@@ -352,17 +351,17 @@
                     const { data: sales } = await app.sb.from('v_sales').select('*');
 
                     const stats = kpis || { sales_volume: 0, stock_value: 0, stock_count: 0, avg_ticket: 0, avg_days: 0, leads_count: 0 };
-                    app.stats = stats; // Salva para reuso
+                    app.stats = stats; 
+                    app.data = { stock: stock || [], sales: sales || [] };
 
                     // KPIs Visão Geral
-                    ui.renderKpi('Vendas', sales?.filter(s => s.closing_date >= startDate.toISOString()).length || 0, 'vs período anterior', 'fa-solid fa-check', 'green', 'overview-kpis');
+                    const salesCount = sales?.filter(s => s.closing_date >= startDate.toISOString()).length || 0;
+                    ui.renderKpi('Vendas', salesCount, 'vs período anterior', 'fa-solid fa-check', 'green', 'overview-kpis');
                     ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Total investido', 'fa-solid fa-dollar-sign', 'blue', 'overview-kpis');
                     ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray', 'overview-kpis');
                     ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'do Estoque', 'fa-solid fa-bullseye', 'green', 'overview-kpis');
                     ui.renderKpi('Média Dias Estoque', `${Math.round(stats.avg_days)} dias`, 'Giro de pátio', 'fa-regular fa-clock', 'green', 'overview-kpis');
 
-                    app.data = { stock: stock || [], sales: sales || [] };
-                    
                     app.renderCommercialKPIs();
                     app.renderStockTable();
                     app.updateCharts();
@@ -378,12 +377,22 @@
                 const container = document.getElementById('commercial-kpis');
                 if(!container) return;
                 container.innerHTML = '';
-                // Repete os KPIs importantes no topo do Comercial
+                
                 const stats = app.stats || { stock_value: 0, stock_count: 0, avg_ticket: 0, avg_days: 0 };
+                
+                // Calcular vendas para o período selecionado
+                const days = parseInt(document.getElementById('date-range').value);
+                const startDate = new Date(); startDate.setDate(startDate.getDate() - days);
+                const salesCount = app.data.sales.filter(s => s.closing_date >= startDate.toISOString()).length;
+
+                // Renderizando os 5 Cards em ordem
                 ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Investido', 'fa-solid fa-dollar-sign', 'blue', 'commercial-kpis');
                 ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray', 'commercial-kpis');
                 ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'Estoque', 'fa-solid fa-bullseye', 'green', 'commercial-kpis');
                 ui.renderKpi('Média Dias Estoque', `${Math.round(stats.avg_days)} dias`, 'Giro', 'fa-regular fa-clock', 'green', 'commercial-kpis');
+                
+                // Card de Vendas (NOVO) - Ultima posição
+                ui.renderKpi('Vendas', salesCount, 'Realizadas', 'fa-solid fa-hand-holding-dollar', 'green', 'commercial-kpis');
             },
 
             sortStock: (column) => {
@@ -434,16 +443,13 @@
                 const commonBarOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } };
                 const commonPieOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#9CA3AF', usePointStyle: true, font: { size: 10 } } } } };
 
-                // Overview Charts
                 app.charts.topBrands = new Chart(document.getElementById('chart-top-brands'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
                 app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
                 app.charts.funnel = new Chart(document.getElementById('chart-funnel'), { type: 'bar', data: { labels: ['Impressões', 'Cliques', 'Leads', 'Vendas'], datasets: [{ data: [15000, 3200, 450, 42], backgroundColor: ['#1F2937', '#374151', '#3B82F6', '#10B981'], borderRadius: 4, barPercentage: 0.5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } } });
 
-                // Commercial Tab Charts
                 app.charts.mixBrandsCom = new Chart(document.getElementById('chart-mix-brands-com'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
                 app.charts.topBrandsCom = new Chart(document.getElementById('chart-top-brands-com'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
                 
-                // NOVO: Price Range Chart
                 app.charts.priceRange = new Chart(document.getElementById('chart-price-range'), {
                     type: 'bar',
                     data: { labels: [], datasets: [{ label: 'Qtd Veículos', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] },
@@ -456,7 +462,6 @@
                     }
                 });
 
-                // Marketing Charts
                 app.charts.sourcesBar = new Chart(document.getElementById('chart-sources-bar'), { type: 'bar', data: { labels: ['Leads', 'Vendas'], datasets: [{ label: 'Meta', data: [245, 18], backgroundColor: '#8B5CF6', borderRadius: 4 }, { label: 'Google', data: [189, 14], backgroundColor: '#10B981', borderRadius: 4 }] }, options: commonBarOptions });
                 app.charts.sourcesPie = new Chart(document.getElementById('chart-sources-pie'), { type: 'pie', data: { labels: ['Meta ADS', 'Google ADS', 'Orgânico', 'Indicação'], datasets: [{ data: [45, 35, 12, 8], backgroundColor: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
             },
@@ -465,7 +470,6 @@
                 const salesBrand = app.data.sales.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
                 const stockBrand = app.data.stock.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
 
-                // Update Overview
                 app.charts.topBrands.data.labels = Object.keys(salesBrand);
                 app.charts.topBrands.data.datasets[0].data = Object.values(salesBrand);
                 app.charts.topBrands.update();
@@ -474,7 +478,6 @@
                 app.charts.mixBrands.data.datasets[0].data = Object.values(stockBrand);
                 app.charts.mixBrands.update();
 
-                // Update Commercial (Mirrors Overview + New Chart)
                 app.charts.mixBrandsCom.data.labels = Object.keys(stockBrand);
                 app.charts.mixBrandsCom.data.datasets[0].data = Object.values(stockBrand);
                 app.charts.mixBrandsCom.update();
@@ -483,7 +486,6 @@
                 app.charts.topBrandsCom.data.datasets[0].data = Object.values(salesBrand);
                 app.charts.topBrandsCom.update();
 
-                // Lógica da Faixa de Preço
                 const ranges = { 'Até R$ 50k': 0, 'R$ 50k - 80k': 0, 'R$ 80k - 120k': 0, 'R$ 120k - 180k': 0, 'Acima de R$ 180k': 0 };
                 app.data.stock.forEach(c => {
                     const p = c.price;
