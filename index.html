@@ -33,7 +33,6 @@
         body { background-color: #0B0E14; color: #F3F4F6; }
         .glass-effect { background: #151A25; border: 1px solid #2A303C; }
         .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #60A5FA; border-left: 3px solid #3B82F6; }
-        /* Scrollbar fina e moderna */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #2A303C; border-radius: 4px; }
@@ -41,9 +40,9 @@
         
         .chart-container { position: relative; height: 100%; width: 100%; }
         
-        /* Efeito de hover nas tabelas */
-        .sort-icon { transition: transform 0.2s; }
-        th.active-sort { color: #3B82F6; }
+        /* Efeito hover na tabela */
+        .hover-row:hover td { background-color: rgba(59, 130, 246, 0.05); }
+        .photo-trigger:hover { color: #60A5FA; cursor: pointer; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden text-sm font-sans selection:bg-primary/30 selection:text-white">
@@ -163,7 +162,6 @@
                             <div><p class="text-gray-500 text-[10px] uppercase font-bold">ROAS</p><p class="text-xl text-green-400">12x</p></div>
                         </div>
                     </div>
-
                     <div class="glass-effect rounded-xl p-6 relative overflow-hidden group border-t-4 border-green-500 shadow-lg hover:shadow-green-500/10 transition duration-500">
                         <div class="absolute -right-6 -top-6 w-32 h-32 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition"></div>
                         <h3 class="text-green-400 font-bold mb-6 text-lg flex items-center gap-2"><i class="fa-brands fa-google"></i> Google ADS</h3>
@@ -175,7 +173,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="glass-effect rounded-xl p-6">
                         <h3 class="text-gray-300 font-semibold mb-4 text-sm">Performance por Canal</h3>
@@ -187,7 +184,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 
@@ -195,17 +191,24 @@
         <div class="bg-card border border-border p-6 rounded-xl w-96 shadow-2xl animate-fade-in-up">
             <h3 class="text-white font-bold mb-4 text-lg">Conexão Banco de Dados</h3>
             <p class="text-gray-500 text-xs mb-4">Insira as credenciais do seu Supabase.</p>
-            
             <label class="text-xs text-gray-400 font-bold uppercase">URL</label>
             <input type="text" id="sb-url" class="w-full bg-bg border border-border rounded p-2 text-white mb-3 text-sm focus:border-primary outline-none focus:ring-1 focus:ring-primary">
-            
             <label class="text-xs text-gray-400 font-bold uppercase">Anon Key</label>
             <input type="password" id="sb-key" class="w-full bg-bg border border-border rounded p-2 text-white mb-6 text-sm focus:border-primary outline-none focus:ring-1 focus:ring-primary">
-            
             <div class="flex gap-2">
                 <button onclick="ui.closeConfig()" class="flex-1 py-2 text-gray-400 hover:text-white transition rounded hover:bg-white/5">Cancelar</button>
                 <button onclick="app.saveConfig()" class="flex-1 py-2 bg-primary text-white rounded font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-500/30">Salvar Conexão</button>
             </div>
+        </div>
+    </div>
+
+    <div id="image-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[60] backdrop-blur-md" onclick="ui.closeImage(event)">
+        <div class="relative bg-transparent p-4 max-w-4xl w-full flex flex-col items-center">
+            <button onclick="ui.closeImage(event, true)" class="absolute top-0 right-0 m-4 text-white text-3xl hover:text-primary transition z-50">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="modal-img-src" src="" alt="Veículo" class="max-h-[80vh] w-auto rounded-lg shadow-2xl border border-gray-700 object-contain">
+            <p id="modal-img-title" class="text-white mt-4 font-bold text-lg tracking-wide bg-black/50 px-4 py-2 rounded-full"></p>
         </div>
     </div>
 
@@ -220,7 +223,6 @@
                     purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
                     gray: 'text-gray-400 bg-gray-500/10 border-gray-500/20'
                 };
-                
                 const html = `
                     <div class="glass-effect p-5 rounded-xl flex flex-col justify-between h-32 relative overflow-hidden group border hover:border-opacity-50 transition duration-300 ${colors[color].split(' ')[2]}">
                         <div class="flex justify-between items-start z-10">
@@ -242,14 +244,28 @@
             closeConfig: () => document.getElementById('config-modal').classList.add('hidden'),
             loading: (show) => document.getElementById('loading').classList.toggle('hidden', !show),
             
+            // New Image Logic
+            openImage: (url, title) => {
+                if(!url || url === 'null') return; // Segurança
+                document.getElementById('modal-img-src').src = url;
+                document.getElementById('modal-img-title').innerText = title;
+                document.getElementById('image-modal').classList.remove('hidden');
+                document.getElementById('image-modal').classList.add('flex');
+            },
+            closeImage: (e, force) => {
+                if (force || e.target.id === 'image-modal') {
+                    document.getElementById('image-modal').classList.add('hidden');
+                    document.getElementById('image-modal').classList.remove('flex');
+                    document.getElementById('modal-img-src').src = '';
+                }
+            },
+
             updateSortIcons: (activeCol, order) => {
-                // Reset icons
                 ['price', 'days_in_stock'].forEach(col => {
                     const icon = document.getElementById(`icon-${col}`);
                     icon.className = 'fa-solid fa-sort ml-2 text-gray-600 group-hover:text-primary';
                     icon.parentElement.classList.remove('active-sort');
                 });
-                
                 if (activeCol) {
                     const activeIcon = document.getElementById(`icon-${activeCol}`);
                     activeIcon.className = `fa-solid fa-sort-${order === 'asc' ? 'up' : 'down'} ml-2 text-primary`;
@@ -262,13 +278,12 @@
             sb: null,
             data: {},
             charts: {},
-            sortState: { column: null, order: 'desc' }, // Estado da ordenação
+            sortState: { column: null, order: 'desc' },
 
             init: async () => {
                 const url = localStorage.getItem('dash_sb_url');
                 const key = localStorage.getItem('dash_sb_key');
                 if (!url || !key) return ui.openConfig();
-                
                 try {
                     app.sb = supabase.createClient(url, key);
                     app.initCharts();
@@ -298,35 +313,29 @@
             refreshData: async () => {
                 ui.loading(true);
                 document.getElementById('overview-kpis').innerHTML = '';
-                
                 const days = parseInt(document.getElementById('date-range').value);
                 const startDate = new Date(); startDate.setDate(startDate.getDate() - days);
                 
                 try {
-                    // 1. KPIs via RPC
                     const { data: kpis, error } = await app.sb.rpc('get_kpis', { 
                         start_date: startDate.toISOString().split('T')[0], 
                         end_date: new Date().toISOString().split('T')[0] 
                     });
-                    
                     if(error) throw error;
 
-                    // 2. Views Data
                     const { data: stock } = await app.sb.from('v_stock').select('*');
                     const { data: sales } = await app.sb.from('v_sales').select('*');
 
                     const stats = kpis || { sales_volume: 0, stock_value: 0, stock_count: 0, avg_ticket: 0, avg_days: 0, leads_count: 0 };
                     
-                    // Render KPIs
                     ui.renderKpi('Vendas', sales?.filter(s => s.closing_date >= startDate.toISOString()).length || 0, 'vs período anterior', 'fa-solid fa-check', 'green');
                     ui.renderKpi('Estoque (R$)', formatBRL(stats.stock_value), 'Total investido', 'fa-solid fa-dollar-sign', 'blue');
                     ui.renderKpi('Veículos', stats.stock_count, 'Em pátio', 'fa-solid fa-car', 'gray');
                     ui.renderKpi('Ticket Médio', formatBRL(stats.avg_ticket), 'do Estoque', 'fa-solid fa-bullseye', 'green');
                     ui.renderKpi('Leads', stats.leads_count, 'Total gerado', 'fa-solid fa-users', 'purple');
 
-                    // Stock Table & Charts Logic
                     app.data = { stock: stock || [], sales: sales || [] };
-                    app.renderStockTable(); // Renderiza inicial
+                    app.renderStockTable();
                     app.updateCharts();
 
                 } catch (e) { 
@@ -336,41 +345,36 @@
                 ui.loading(false);
             },
 
-            // Nova Função de Ordenação
             sortStock: (column) => {
-                // Inverte ordem se clicar na mesma coluna
                 if (app.sortState.column === column) {
                     app.sortState.order = app.sortState.order === 'asc' ? 'desc' : 'asc';
                 } else {
                     app.sortState.column = column;
-                    app.sortState.order = 'desc'; // Padrão descrescente para valores
+                    app.sortState.order = 'desc';
                 }
-                
                 ui.updateSortIcons(column, app.sortState.order);
                 app.renderStockTable();
             },
 
             renderStockTable: () => {
                 document.getElementById('stock-count-badge').innerText = `${app.data.stock.length} veículos`;
-                
-                // Lógica de Ordenação
                 let displayData = [...app.data.stock];
                 if (app.sortState.column) {
                     displayData.sort((a, b) => {
                         let valA = a[app.sortState.column];
                         let valB = b[app.sortState.column];
-                        
-                        // Garante que é número
                         valA = parseFloat(valA) || 0;
                         valB = parseFloat(valB) || 0;
-
                         return app.sortState.order === 'asc' ? valA - valB : valB - valA;
                     });
                 }
 
                 document.getElementById('stock-table-body').innerHTML = displayData.map(c => `
-                    <tr class="hover:bg-white/5 transition group border-b border-border last:border-0">
-                        <td class="px-6 py-4 font-bold text-white group-hover:text-primary transition">${c.vehicle_name || 'N/A'}</td>
+                    <tr class="hover-row transition group border-b border-border last:border-0">
+                        <td class="px-6 py-4 font-bold text-white transition photo-trigger" onclick="ui.openImage('${c.image_url}', '${c.vehicle_name}')" title="Ver foto">
+                            ${c.vehicle_name || 'N/A'} 
+                            ${c.image_url ? '<i class="fa-regular fa-image ml-2 text-gray-600 group-hover:text-primary"></i>' : ''}
+                        </td>
                         <td class="px-6 py-4">${c.brand || '-'}</td>
                         <td class="px-6 py-4">${c.year_model || '-'}</td>
                         <td class="px-6 py-4 font-mono text-white tracking-wide">${formatBRL(c.price)}</td>
@@ -404,7 +408,6 @@
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } }
                 });
 
-                // Marketing Charts
                 app.charts.sourcesBar = new Chart(document.getElementById('chart-sources-bar'), {
                     type: 'bar',
                     data: { labels: ['Leads', 'Vendas'], datasets: [
