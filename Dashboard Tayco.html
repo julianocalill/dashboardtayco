@@ -1,46 +1,51 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AutoGestão • Dashboard</title>
+  <title>AutoGestão - Tayco Dashboard</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <style>
     :root{
-      --bg:#070B12;
-      --panel:#0B1020;
-      --panel2:#0C1426;
-      --border:rgba(255,255,255,.08);
-      --text:#EAF0FF;
-      --muted:rgba(234,240,255,.65);
-      --green:#25D366;
-      --blue:#4C8DFF;
-      --purple:#8B5CF6;
-      --warning:#F59E0B;
-      --danger:#EF4444;
-      --radius:18px;
-      --shadow:0 18px 40px rgba(0,0,0,.35);
+      --bg:#0b0f1a;
+      --panel:#0f172a;
+      --panel2:#0b1224;
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --border:rgba(148,163,184,.12);
+      --accent:#7c3aed;
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --cardRadius:16px;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{
-      margin:0;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background: radial-gradient(900px 600px at 25% 0%, rgba(139,92,246,.18), transparent 60%),
-                  radial-gradient(900px 600px at 80% 10%, rgba(76,141,255,.14), transparent 65%),
-                  var(--bg);
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:radial-gradient(1000px 500px at 20% 0%, rgba(124,58,237,.20), transparent 55%),
+                 radial-gradient(900px 600px at 80% 10%, rgba(34,197,94,.10), transparent 55%),
+                 var(--bg);
       color:var(--text);
     }
-    .app{display:flex; min-height:100vh;}
-    .sidebar{
-      width:260px;
+    .app{
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      min-height:100vh;
+    }
+    aside{
+      border-right:1px solid var(--border);
       padding:18px 14px;
-      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 35%),
-                  rgba(255,255,255,.02);
+      background:linear-gradient(180deg, rgba(15,23,42,.9), rgba(11,15,26,.9));
+      position:sticky; top:0; height:100vh;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:14px;
+      background:rgba(124,58,237,.08);
      
