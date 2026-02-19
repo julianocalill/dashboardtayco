@@ -64,6 +64,11 @@
             <button onclick="app.navigate('commercial')" id="nav-commercial" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-car w-5"></i> Comercial
             </button>
+            
+            <button onclick="app.navigate('metas')" id="nav-metas" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-gauge-high w-5"></i> Metas
+            </button>
+
             <button onclick="app.navigate('marketing')" id="nav-marketing" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-bullhorn w-5"></i> Marketing
             </button>
@@ -121,7 +126,6 @@
             </div>
 
             <div id="view-commercial" class="hidden space-y-6">
-                
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" id="commercial-kpis"></div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -143,7 +147,7 @@
                     </div>
                 </div>
 
-                <div class="glass-effect rounded-xl overflow-hidden border border-border shadow-xl shadow-black/20">
+                 <div class="glass-effect rounded-xl overflow-hidden border border-border shadow-xl shadow-black/20">
                     <div class="p-6 border-b border-border flex justify-between items-center bg-card/50">
                         <h3 class="text-white font-semibold text-sm">Estoque Detalhado</h3>
                         <span class="text-xs bg-primary/20 text-primary border border-primary/20 px-3 py-1 rounded-full font-medium" id="stock-count-badge">0 veículos</span>
@@ -167,6 +171,55 @@
                                 </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <div id="view-metas" class="hidden space-y-6">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <div class="glass-effect rounded-xl p-8 shadow-xl shadow-black/20 flex flex-col items-center relative overflow-hidden group">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+                        <h3 class="text-white font-bold text-lg mb-1">Carros Vendidos</h3>
+                        <p class="text-gray-500 text-xs mb-8 uppercase tracking-wider font-semibold">Meta Mensal: 15 Veículos</p>
+                        
+                        <div class="relative w-full h-48 flex justify-center">
+                            <canvas id="gauge-carros"></canvas>
+                            <div class="absolute bottom-6 flex flex-col items-center">
+                                <span id="gauge-carros-val" class="text-4xl font-bold text-white mb-[-5px]">0</span>
+                                <span class="text-xs text-blue-400 font-medium tracking-widest uppercase">Realizado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-effect rounded-xl p-8 shadow-xl shadow-black/20 flex flex-col items-center relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-purple-500"></div>
+                        <h3 class="text-white font-bold text-lg mb-1">Meta Tork</h3>
+                        <p class="text-gray-500 text-xs mb-8 uppercase tracking-wider font-semibold">Meta Mensal: 10 Veículos</p>
+                        
+                        <div class="relative w-full h-48 flex justify-center">
+                            <canvas id="gauge-tork"></canvas>
+                            <div class="absolute bottom-6 flex flex-col items-center">
+                                <span id="gauge-tork-val" class="text-4xl font-bold text-white mb-[-5px]">0</span>
+                                <span class="text-xs text-purple-400 font-medium tracking-widest uppercase">Realizado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-effect rounded-xl p-8 shadow-xl shadow-black/20 flex flex-col items-center relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                        <h3 class="text-white font-bold text-lg mb-1">Financiamento</h3>
+                        <p class="text-gray-500 text-xs mb-8 uppercase tracking-wider font-semibold">Meta Mensal: R$ 100k</p>
+                        
+                        <div class="relative w-full h-48 flex justify-center">
+                            <canvas id="gauge-fin"></canvas>
+                            <div class="absolute bottom-6 flex flex-col items-center">
+                                <span id="gauge-fin-val" class="text-2xl font-bold text-white mb-1">R$ 0</span>
+                                <span class="text-xs text-green-400 font-medium tracking-widest uppercase">Realizado</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -291,11 +344,9 @@
                 }
             },
             
-            // Lógica do Modal de Lista
             openList: (title, vehicles) => {
                 document.getElementById('list-modal-title').innerText = title;
                 const content = document.getElementById('list-modal-content');
-                
                 if (vehicles.length === 0) {
                     content.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum veículo encontrado.</p>';
                 } else {
@@ -309,7 +360,6 @@
                         </div>
                     `).join('');
                 }
-                
                 document.getElementById('list-modal').classList.remove('hidden');
                 document.getElementById('list-modal').classList.add('flex');
             },
@@ -367,11 +417,18 @@
             navigate: (view) => {
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                 document.getElementById(`nav-${view}`).classList.add('active');
-                ['overview', 'commercial', 'marketing'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+                
+                // Mapeia todas as views
+                ['overview', 'commercial', 'marketing', 'metas'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
                 document.getElementById(`view-${view}`).classList.remove('hidden');
-                document.getElementById('page-title').innerText = 
-                    view === 'overview' ? 'Visão Geral' : 
-                    view === 'commercial' ? 'Área Comercial' : 'Marketing & Performance';
+                
+                const titles = {
+                    'overview': 'Visão Geral',
+                    'commercial': 'Área Comercial',
+                    'metas': 'Acompanhamento de Metas',
+                    'marketing': 'Marketing & Performance'
+                };
+                document.getElementById('page-title').innerText = titles[view] || 'Dashboard';
                 
                 if(view === 'commercial') app.renderCommercialKPIs();
             },
@@ -475,7 +532,6 @@
                     </tr>`).join('');
             },
 
-            // Helper para filtrar os carros para o popup por PREÇO
             showVehiclesByPrice: (rangeLabel) => {
                 const vehicles = app.data.stock.filter(c => {
                     const p = parseFloat(c.price) || 0;
@@ -486,12 +542,10 @@
                     if (rangeLabel === 'Acima de R$ 180k') return p >= 180000;
                     return false;
                 });
-                
                 vehicles.sort((a,b) => (parseFloat(b.price)||0) - (parseFloat(a.price)||0));
                 ui.openList(rangeLabel, vehicles);
             },
 
-            // Helper para filtrar os carros para o popup por MARCA
             showVehiclesByBrand: (brandName) => {
                 const vehicles = app.data.stock.filter(c => c.brand === brandName);
                 vehicles.sort((a,b) => (parseFloat(b.price)||0) - (parseFloat(a.price)||0));
@@ -504,78 +558,56 @@
                 
                 const commonBarOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } };
                 const commonPieOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#9CA3AF', usePointStyle: true, font: { size: 10 } } } } };
+                
+                // Configuração base para os Velocímetros (Gauges)
+                const gaugeOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    rotation: -90,      // Inicia na esquerda
+                    circumference: 180, // Desenha só metade (meio-círculo)
+                    cutout: '80%',      // Espessura da linha
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                };
 
+                // Gráficos Iniciais
                 app.charts.topBrands = new Chart(document.getElementById('chart-top-brands'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
                 app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
                 app.charts.funnel = new Chart(document.getElementById('chart-funnel'), { type: 'bar', data: { labels: ['Impressões', 'Cliques', 'Leads', 'Vendas'], datasets: [{ data: [15000, 3200, 450, 42], backgroundColor: ['#1F2937', '#374151', '#3B82F6', '#10B981'], borderRadius: 4, barPercentage: 0.5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } } });
-
-                // CHART MIX DE MARCAS COM CLICK
-                app.charts.mixBrandsCom = new Chart(document.getElementById('chart-mix-brands-com'), { 
-                    type: 'doughnut', 
-                    data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, 
-                    options: { 
-                        ...commonPieOptions,
-                        onClick: (e, elements) => {
-                            if (elements.length > 0) {
-                                const index = elements[0].index;
-                                const label = app.charts.mixBrandsCom.data.labels[index];
-                                app.showVehiclesByBrand(label);
-                            }
-                        },
-                        onHover: (event, chartElement) => {
-                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-                        }
-                    } 
-                });
-
+                app.charts.mixBrandsCom = new Chart(document.getElementById('chart-mix-brands-com'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: { ...commonPieOptions, onClick: (e, el) => { if(el.length) app.showVehiclesByBrand(app.charts.mixBrandsCom.data.labels[el[0].index]); }, onHover: (e, ch) => e.native.target.style.cursor = ch[0] ? 'pointer' : 'default' } });
                 app.charts.topBrandsCom = new Chart(document.getElementById('chart-top-brands-com'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
-                
-                // CHART FAIXA DE PREÇO COM CLICK
-                app.charts.priceRange = new Chart(document.getElementById('chart-price-range'), {
-                    type: 'bar',
-                    data: { labels: [], datasets: [{ label: 'Qtd Veículos', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] },
-                    options: { 
-                        indexAxis: 'y', 
-                        responsive: true, 
-                        maintainAspectRatio: false, 
-                        plugins: { legend: { display: false } },
-                        scales: { x: { grid: { color: '#2A303C' } }, y: { grid: { display: false } } },
-                        onClick: (e, elements) => {
-                            if (elements.length > 0) {
-                                const index = elements[0].index;
-                                const label = app.charts.priceRange.data.labels[index];
-                                app.showVehiclesByPrice(label);
-                            }
-                        },
-                        onHover: (event, chartElement) => {
-                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-                        }
-                    }
-                });
-
+                app.charts.priceRange = new Chart(document.getElementById('chart-price-range'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Qtd Veículos', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: { ...commonBarOptions, indexAxis: 'y', scales: { x: { grid: { color: '#2A303C' } }, y: { grid: { display: false } } }, onClick: (e, el) => { if(el.length) app.showVehiclesByPrice(app.charts.priceRange.data.labels[el[0].index]); }, onHover: (e, ch) => e.native.target.style.cursor = ch[0] ? 'pointer' : 'default' } });
                 app.charts.sourcesBar = new Chart(document.getElementById('chart-sources-bar'), { type: 'bar', data: { labels: ['Leads', 'Vendas'], datasets: [{ label: 'Meta', data: [245, 18], backgroundColor: '#8B5CF6', borderRadius: 4 }, { label: 'Google', data: [189, 14], backgroundColor: '#10B981', borderRadius: 4 }] }, options: commonBarOptions });
                 app.charts.sourcesPie = new Chart(document.getElementById('chart-sources-pie'), { type: 'pie', data: { labels: ['Meta ADS', 'Google ADS', 'Orgânico', 'Indicação'], datasets: [{ data: [45, 35, 12, 8], backgroundColor: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
+                
+                // INICIA GRÁFICOS DE METAS (Velocímetros)
+                app.charts.gaugeCarros = new Chart(document.getElementById('gauge-carros'), {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [0, 15], backgroundColor: ['#3B82F6', '#1F2937'], borderWidth: 0, borderRadius: [4, 0] }] },
+                    options: gaugeOptions
+                });
+
+                app.charts.gaugeTork = new Chart(document.getElementById('gauge-tork'), {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [0, 10], backgroundColor: ['#8B5CF6', '#1F2937'], borderWidth: 0, borderRadius: [4, 0] }] },
+                    options: gaugeOptions
+                });
+
+                app.charts.gaugeFin = new Chart(document.getElementById('gauge-fin'), {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [0, 100000], backgroundColor: ['#10B981', '#1F2937'], borderWidth: 0, borderRadius: [4, 0] }] },
+                    options: gaugeOptions
+                });
             },
 
             updateCharts: () => {
                 const salesBrand = app.data.sales.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
                 const stockBrand = app.data.stock.reduce((acc, curr) => { acc[curr.brand] = (acc[curr.brand] || 0) + 1; return acc; }, {});
 
-                app.charts.topBrands.data.labels = Object.keys(salesBrand);
-                app.charts.topBrands.data.datasets[0].data = Object.values(salesBrand);
-                app.charts.topBrands.update();
-
-                app.charts.mixBrands.data.labels = Object.keys(stockBrand);
-                app.charts.mixBrands.data.datasets[0].data = Object.values(stockBrand);
-                app.charts.mixBrands.update();
-
-                app.charts.mixBrandsCom.data.labels = Object.keys(stockBrand);
-                app.charts.mixBrandsCom.data.datasets[0].data = Object.values(stockBrand);
-                app.charts.mixBrandsCom.update();
-
-                app.charts.topBrandsCom.data.labels = Object.keys(salesBrand);
-                app.charts.topBrandsCom.data.datasets[0].data = Object.values(salesBrand);
-                app.charts.topBrandsCom.update();
+                app.charts.topBrands.data.labels = Object.keys(salesBrand); app.charts.topBrands.data.datasets[0].data = Object.values(salesBrand); app.charts.topBrands.update();
+                app.charts.mixBrands.data.labels = Object.keys(stockBrand); app.charts.mixBrands.data.datasets[0].data = Object.values(stockBrand); app.charts.mixBrands.update();
+                app.charts.mixBrandsCom.data.labels = Object.keys(stockBrand); app.charts.mixBrandsCom.data.datasets[0].data = Object.values(stockBrand); app.charts.mixBrandsCom.update();
+                app.charts.topBrandsCom.data.labels = Object.keys(salesBrand); app.charts.topBrandsCom.data.datasets[0].data = Object.values(salesBrand); app.charts.topBrandsCom.update();
 
                 const ranges = { 'Até R$ 50k': 0, 'R$ 50k - 80k': 0, 'R$ 80k - 120k': 0, 'R$ 120k - 180k': 0, 'Acima de R$ 180k': 0 };
                 app.data.stock.forEach(c => {
@@ -590,6 +622,34 @@
                 app.charts.priceRange.data.labels = Object.keys(ranges);
                 app.charts.priceRange.data.datasets[0].data = Object.values(ranges);
                 app.charts.priceRange.update();
+
+                // LÓGICA DE ATUALIZAÇÃO DAS METAS
+                const days = parseInt(document.getElementById('date-range').value);
+                const startDate = new Date(); startDate.setDate(startDate.getDate() - days);
+                const salesCount = app.data.sales.filter(s => s.closing_date >= startDate.toISOString()).length;
+
+                // Meta Carros (15)
+                const metaCarros = 15;
+                const restanteCarros = Math.max(0, metaCarros - salesCount);
+                app.charts.gaugeCarros.data.datasets[0].data = [salesCount, restanteCarros];
+                app.charts.gaugeCarros.data.datasets[0].backgroundColor = [salesCount >= metaCarros ? '#10B981' : '#3B82F6', '#1F2937'];
+                document.getElementById('gauge-carros-val').innerText = salesCount;
+                app.charts.gaugeCarros.update();
+
+                // Meta Tork (10)
+                const metaTork = 10;
+                const restanteTork = Math.max(0, metaTork - salesCount);
+                app.charts.gaugeTork.data.datasets[0].data = [salesCount, restanteTork];
+                app.charts.gaugeTork.data.datasets[0].backgroundColor = [salesCount >= metaTork ? '#10B981' : '#8B5CF6', '#1F2937'];
+                document.getElementById('gauge-tork-val').innerText = salesCount;
+                app.charts.gaugeTork.update();
+
+                // Meta Financiamento (Manual: 0 / 100.000)
+                const metaFin = 100000;
+                const atualFin = 0; // Travado em 0 por enquanto
+                app.charts.gaugeFin.data.datasets[0].data = [atualFin, Math.max(0, metaFin - atualFin)];
+                document.getElementById('gauge-fin-val').innerText = formatBRL(atualFin);
+                app.charts.gaugeFin.update();
             }
         };
 
