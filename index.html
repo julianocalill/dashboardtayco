@@ -669,21 +669,26 @@
                 app.data.stock.forEach(c => { const p = c.price; if (p < 50000) ranges['Até R$ 50k']++; else if (p < 80000) ranges['R$ 50k - 80k']++; else if (p < 120000) ranges['R$ 80k - 120k']++; else if (p < 180000) ranges['R$ 120k - 180k']++; else ranges['Acima de R$ 180k']++; });
                 app.charts.priceRange.data.labels = Object.keys(ranges); app.charts.priceRange.data.datasets[0].data = Object.values(ranges); app.charts.priceRange.update();
 
-                // LÓGICA DAS METAS (Carros/Tork)
-                const days = parseInt(document.getElementById('date-range').value);
-                const startDate = new Date(); startDate.setDate(startDate.getDate() - days);
-                const salesCount = app.data.sales.filter(s => s.closing_date >= startDate.toISOString()).length;
+                // --- LÓGICA DAS METAS (Lê do localStorage Editado Manualmente) ---
+                const g = parseInt(localStorage.getItem('vendas_gabriel')) || 0;
+                const m = parseInt(localStorage.getItem('vendas_matheus')) || 0;
+                const e = parseInt(localStorage.getItem('vendas_eduardo')) || 0;
+                
+                // Soma total da equipe para abastecer os velocímetros
+                const totalVendasEquipe = g + m + e;
 
+                // Meta Carros (15) - Alimentado pela soma da equipe
                 const metaCarros = 15;
-                app.charts.gaugeCarros.data.datasets[0].data = [salesCount, Math.max(0, metaCarros - salesCount)];
-                app.charts.gaugeCarros.data.datasets[0].backgroundColor = [salesCount >= metaCarros ? '#10B981' : '#3B82F6', '#1F2937'];
-                document.getElementById('gauge-carros-val').innerText = salesCount;
+                app.charts.gaugeCarros.data.datasets[0].data = [totalVendasEquipe, Math.max(0, metaCarros - totalVendasEquipe)];
+                app.charts.gaugeCarros.data.datasets[0].backgroundColor = [totalVendasEquipe >= metaCarros ? '#10B981' : '#3B82F6', '#1F2937'];
+                document.getElementById('gauge-carros-val').innerText = totalVendasEquipe;
                 app.charts.gaugeCarros.update();
 
+                // Meta Tork (10) - Alimentado pela soma da equipe
                 const metaTork = 10;
-                app.charts.gaugeTork.data.datasets[0].data = [salesCount, Math.max(0, metaTork - salesCount)];
-                app.charts.gaugeTork.data.datasets[0].backgroundColor = [salesCount >= metaTork ? '#10B981' : '#8B5CF6', '#1F2937'];
-                document.getElementById('gauge-tork-val').innerText = salesCount;
+                app.charts.gaugeTork.data.datasets[0].data = [totalVendasEquipe, Math.max(0, metaTork - totalVendasEquipe)];
+                app.charts.gaugeTork.data.datasets[0].backgroundColor = [totalVendasEquipe >= metaTork ? '#10B981' : '#8B5CF6', '#1F2937'];
+                document.getElementById('gauge-tork-val').innerText = totalVendasEquipe;
                 app.charts.gaugeTork.update();
 
                 // Financiamento (Lê do localStorage Editado Manualmente)
@@ -694,23 +699,22 @@
                 document.getElementById('gauge-fin-val').innerText = formatBRL(atualFin);
                 app.charts.gaugeFin.update();
 
-                // --- LÓGICA DOS VENDEDORES (Lê do localStorage Editado Manualmente) ---
-                const g = parseInt(localStorage.getItem('vendas_gabriel')) || 0;
-                const m = parseInt(localStorage.getItem('vendas_matheus')) || 0;
-                const e = parseInt(localStorage.getItem('vendas_eduardo')) || 0;
-
+                // --- ATUALIZAÇÃO VISUAL DOS VENDEDORES ---
                 document.getElementById('vendas-gabriel').innerText = g;
                 document.getElementById('bar-gabriel').style.width = Math.min((g / 5) * 100, 100) + '%';
-                // Fica verde se bater a meta
+                // Volta para azul se for menor que 5, fica verde se bater a meta
                 if(g >= 5) document.getElementById('bar-gabriel').className = 'bg-green-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+                else document.getElementById('bar-gabriel').className = 'bg-blue-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]';
 
                 document.getElementById('vendas-matheus').innerText = m;
                 document.getElementById('bar-matheus').style.width = Math.min((m / 5) * 100, 100) + '%';
                 if(m >= 5) document.getElementById('bar-matheus').className = 'bg-green-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+                else document.getElementById('bar-matheus').className = 'bg-green-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]'; // Matheus já é verde por padrão
 
                 document.getElementById('vendas-eduardo').innerText = e;
                 document.getElementById('bar-eduardo').style.width = Math.min((e / 5) * 100, 100) + '%';
                 if(e >= 5) document.getElementById('bar-eduardo').className = 'bg-green-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+                else document.getElementById('bar-eduardo').className = 'bg-purple-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(139,92,246,0.5)]';
             }
         };
 
