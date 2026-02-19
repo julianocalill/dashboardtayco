@@ -225,8 +225,11 @@
                                     <h4 class="text-white font-bold text-md group-hover:text-blue-400 transition">Gabriel</h4>
                                     <p class="text-[10px] text-gray-500 uppercase font-semibold">Meta: 5 veículos</p>
                                 </div>
-                                <div class="ml-auto text-right">
-                                    <span class="text-2xl font-bold text-white" id="vendas-gabriel">0</span>
+                                <div class="ml-auto flex items-center gap-2">
+                                    <button onclick="app.updateVendedor('gabriel')" class="text-[10px] bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white px-2 py-1 rounded transition border border-white/10 flex items-center gap-1" title="Editar Vendas">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <span class="text-2xl font-bold text-white w-6 text-right" id="vendas-gabriel">0</span>
                                 </div>
                             </div>
                             <div class="w-full bg-bg rounded-full h-2 border border-border">
@@ -241,8 +244,11 @@
                                     <h4 class="text-white font-bold text-md group-hover:text-green-400 transition">Matheus</h4>
                                     <p class="text-[10px] text-gray-500 uppercase font-semibold">Meta: 5 veículos</p>
                                 </div>
-                                <div class="ml-auto text-right">
-                                    <span class="text-2xl font-bold text-white" id="vendas-matheus">0</span>
+                                <div class="ml-auto flex items-center gap-2">
+                                    <button onclick="app.updateVendedor('matheus')" class="text-[10px] bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white px-2 py-1 rounded transition border border-white/10 flex items-center gap-1" title="Editar Vendas">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <span class="text-2xl font-bold text-white w-6 text-right" id="vendas-matheus">0</span>
                                 </div>
                             </div>
                             <div class="w-full bg-bg rounded-full h-2 border border-border">
@@ -257,8 +263,11 @@
                                     <h4 class="text-white font-bold text-md group-hover:text-purple-400 transition">Eduardo</h4>
                                     <p class="text-[10px] text-gray-500 uppercase font-semibold">Meta: 5 veículos</p>
                                 </div>
-                                <div class="ml-auto text-right">
-                                    <span class="text-2xl font-bold text-white" id="vendas-eduardo">0</span>
+                                <div class="ml-auto flex items-center gap-2">
+                                    <button onclick="app.updateVendedor('eduardo')" class="text-[10px] bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white px-2 py-1 rounded transition border border-white/10 flex items-center gap-1" title="Editar Vendas">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <span class="text-2xl font-bold text-white w-6 text-right" id="vendas-eduardo">0</span>
                                 </div>
                             </div>
                             <div class="w-full bg-bg rounded-full h-2 border border-border">
@@ -317,7 +326,7 @@
             <input type="password" id="sb-key" class="w-full bg-bg border border-border rounded p-2 text-white mb-6 text-sm focus:border-primary outline-none">
             <div class="flex gap-2">
                 <button onclick="ui.closeConfig()" class="flex-1 py-2 text-gray-400 hover:text-white transition rounded hover:bg-white/5">Cancelar</button>
-                <button onclick="app.saveConfig()" class="flex-1 py-2 bg-primary text-white rounded font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-500/30">Salvar</button>
+                <button onclick="app.saveConfig()" class="flex-1 py-2 bg-primary text-white rounded font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-500/30">Salvar Conexão</button>
             </div>
         </div>
     </div>
@@ -466,14 +475,12 @@
                 if(view === 'commercial') app.renderCommercialKPIs();
             },
 
-            // NOVA FUNÇÃO: Atualizar Financiamento com Popup
             updateFinanciamento: async () => {
                 const atual = localStorage.getItem('meta_fin_atual') || 0;
-                
                 const { value: novoValor } = await Swal.fire({
-                    title: 'Atualizar Receita',
+                    title: 'Atualizar Financiamento',
                     input: 'number',
-                    inputLabel: 'Valor realizado em Financiamento (R$)',
+                    inputLabel: 'Valor realizado (R$)',
                     inputValue: atual,
                     showCancelButton: true,
                     confirmButtonText: 'Salvar',
@@ -486,12 +493,34 @@
 
                 if (novoValor !== undefined && novoValor !== null) {
                     localStorage.setItem('meta_fin_atual', novoValor);
-                    app.updateCharts(); // Refaz os gráficos para mostrar o novo valor
-                    
-                    Swal.fire({
-                        toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
-                        icon: 'success', title: 'Financiamento atualizado!', background: '#151A25', color: '#fff'
-                    });
+                    app.updateCharts(); 
+                    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'success', title: 'Financiamento atualizado!', background: '#151A25', color: '#fff' });
+                }
+            },
+
+            // NOVA FUNÇÃO: Atualizar Vendas dos Vendedores Individualmente
+            updateVendedor: async (vendedor) => {
+                const nomes = { 'gabriel': 'Gabriel', 'matheus': 'Matheus', 'eduardo': 'Eduardo' };
+                const atual = localStorage.getItem('vendas_' + vendedor) || 0;
+                
+                const { value: novoValor } = await Swal.fire({
+                    title: 'Atualizar Vendas',
+                    input: 'number',
+                    inputLabel: `Veículos vendidos por ${nomes[vendedor]}`,
+                    inputValue: atual,
+                    showCancelButton: true,
+                    confirmButtonText: 'Salvar',
+                    cancelButtonText: 'Cancelar',
+                    background: '#151A25',
+                    color: '#fff',
+                    confirmButtonColor: '#3B82F6',
+                    cancelButtonColor: '#374151'
+                });
+
+                if (novoValor !== undefined && novoValor !== null) {
+                    localStorage.setItem('vendas_' + vendedor, novoValor);
+                    app.updateCharts(); 
+                    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'success', title: `Vendas de ${nomes[vendedor]} atualizadas!`, background: '#151A25', color: '#fff' });
                 }
             },
 
@@ -608,7 +637,7 @@
                 
                 const commonBarOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#2A303C' } }, x: { grid: { display: false } } } };
                 const commonPieOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#9CA3AF', usePointStyle: true, font: { size: 10 } } } } };
-                const gaugeOptions = { responsive: true, maintainAspectRatio: false, rotation: -90, circumference: 180, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } } };
+                const gaugeOptions = { responsive: true, maintainAspectRatio: false, rotation: -90, circumference: 180, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } }, animation: { duration: 1000 } };
 
                 app.charts.topBrands = new Chart(document.getElementById('chart-top-brands'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Vendas', data: [], backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: commonBarOptions });
                 app.charts.mixBrands = new Chart(document.getElementById('chart-mix-brands'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'], borderWidth: 0 }] }, options: commonPieOptions });
@@ -640,7 +669,7 @@
                 app.data.stock.forEach(c => { const p = c.price; if (p < 50000) ranges['Até R$ 50k']++; else if (p < 80000) ranges['R$ 50k - 80k']++; else if (p < 120000) ranges['R$ 80k - 120k']++; else if (p < 180000) ranges['R$ 120k - 180k']++; else ranges['Acima de R$ 180k']++; });
                 app.charts.priceRange.data.labels = Object.keys(ranges); app.charts.priceRange.data.datasets[0].data = Object.values(ranges); app.charts.priceRange.update();
 
-                // --- LÓGICA DAS METAS ---
+                // LÓGICA DAS METAS (Carros/Tork)
                 const days = parseInt(document.getElementById('date-range').value);
                 const startDate = new Date(); startDate.setDate(startDate.getDate() - days);
                 const salesCount = app.data.sales.filter(s => s.closing_date >= startDate.toISOString()).length;
@@ -657,6 +686,7 @@
                 document.getElementById('gauge-tork-val').innerText = salesCount;
                 app.charts.gaugeTork.update();
 
+                // Financiamento (Lê do localStorage Editado Manualmente)
                 const metaFin = 100000;
                 const atualFin = parseFloat(localStorage.getItem('meta_fin_atual')) || 0;
                 app.charts.gaugeFin.data.datasets[0].data = [atualFin, Math.max(0, metaFin - atualFin)];
@@ -664,23 +694,23 @@
                 document.getElementById('gauge-fin-val').innerText = formatBRL(atualFin);
                 app.charts.gaugeFin.update();
 
-                // --- LÓGICA DOS VENDEDORES (Mock Automático) ---
-                // Divide as vendas totais entre os 3 proporcionalmente para demonstração visual
-                let g = 0, m = 0, e = 0;
-                for(let i = 0; i < salesCount; i++) {
-                    if (i % 3 === 0) g++;
-                    else if (i % 3 === 1) m++;
-                    else e++;
-                }
+                // --- LÓGICA DOS VENDEDORES (Lê do localStorage Editado Manualmente) ---
+                const g = parseInt(localStorage.getItem('vendas_gabriel')) || 0;
+                const m = parseInt(localStorage.getItem('vendas_matheus')) || 0;
+                const e = parseInt(localStorage.getItem('vendas_eduardo')) || 0;
 
                 document.getElementById('vendas-gabriel').innerText = g;
                 document.getElementById('bar-gabriel').style.width = Math.min((g / 5) * 100, 100) + '%';
+                // Fica verde se bater a meta
+                if(g >= 5) document.getElementById('bar-gabriel').className = 'bg-green-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
 
                 document.getElementById('vendas-matheus').innerText = m;
                 document.getElementById('bar-matheus').style.width = Math.min((m / 5) * 100, 100) + '%';
+                if(m >= 5) document.getElementById('bar-matheus').className = 'bg-green-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
 
                 document.getElementById('vendas-eduardo').innerText = e;
                 document.getElementById('bar-eduardo').style.width = Math.min((e / 5) * 100, 100) + '%';
+                if(e >= 5) document.getElementById('bar-eduardo').className = 'bg-green-500 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
             }
         };
 
